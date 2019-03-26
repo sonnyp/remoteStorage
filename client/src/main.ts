@@ -1,5 +1,5 @@
 import RemoteStorage from "./RemoteStorage.js";
-// import { AsyncStorage } from "./AsyncStorage.js";
+import { AsyncStorage } from "./AsyncStorage.js";
 import { lookup } from "./WebFinger.js";
 
 // import {
@@ -7,20 +7,7 @@ import { lookup } from "./WebFinger.js";
 //   createAsyncIteratorFromStream,
 // } from "./stream.js";
 
-// const asyncStorage = new AsyncStorage("remoteStorage");
-
 // const token = "5ad04ac40a6a091ca4bafa8019deae78";
-
-const button = document.querySelector("button");
-if (button) {
-  button.onclick = async () => {
-    try {
-      await main();
-    } catch (err) {
-      console.log(err);
-    }
-  };
-}
 
 // dev
 // const resource = "acct:sonny@localhost";
@@ -96,36 +83,50 @@ async function connected(token: string) {
 const rs = new RemoteStorage("http://localhost:9090", "foobar");
 
 (async () => {
-  console.log(await rs.get("/hello/"));
+  // console.log(await rs.get("/hello/"));
 })().catch(console.error);
 
-const input = document.querySelector("input");
-if (input) {
-  input.addEventListener("change", async () => {
-    if (!input.files) return;
-    const blob = input.files[0];
+const listButton = document.querySelector("button#list");
+if (listButton) {
+  listButton.addEventListener("click", async () => {
+    for await (const [path, node] of rs) {
+      console.log(path, node);
+    }
+  });
+}
+
+const syncButton = document.querySelector("button#sync");
+if (syncButton) {
+  syncButton.addEventListener("click", async () => {
+    sync();
+  });
+}
+
+async function sync() {
+  const asyncStorage = new AsyncStorage("remoteStorage.js");
+  for await (const [path, node] of rs) {
+    console.log(path, node);
+    // const {path, ...node} =
+
+    await asyncStorage.set(path, node);
+  }
+}
+
+const form = document.querySelector("form");
+if (form) {
+  form.addEventListener("submit", async evt => {
+    evt.preventDefault();
+
+    const file = form.querySelector("input[type=file]") as HTMLInputElement;
+    if (!file.files) return;
+    const blob = file.files[0];
     if (!blob) return;
 
-    await rs.put("/hello/" + blob.name, blob);
+    const location = form.querySelector("input[type=text]") as HTMLInputElement;
 
-    // await rs.put("/hello/foobar/machin", blob);
-    // const stream = createStringStreamFromBlob(blob);
-
-    // let n = 0;
-
-    // for await (const chunk of createAsyncIteratorFromStream(stream)) {
-    //   n = n + 1;
-    //   console.log(n, chunk);
-    // }
-
-    // await rs.put(`/public/${file.name}`, file);
-
-    // console.log(await rs.get('/public/big.txt'))
-    // console.log(stream)
-
-    // const reader = stream.getReader()
-
-    // console.log(await reader.read())
+    console.log(await rs.put(`${location.value}${blob.name}`, blob));
+    const node = await rs.head(`${location.value}${blob.name}`);
+    console.log(node);
   });
 }
 

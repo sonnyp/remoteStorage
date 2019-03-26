@@ -3,7 +3,7 @@ import fs from "fs";
 import { join } from "path";
 import { promisify } from "util";
 import uuid from "uuid/v4";
-import { setNode, getNode, removeNode, Tree } from "../tree";
+import { setNode, getNode, removeNode, Tree, createTree } from "../tree";
 import stream from "stream";
 import { EventEmitter } from "events";
 import { RemoteStorage } from "../RemoteStorage";
@@ -20,20 +20,20 @@ interface FSRemoteStorageInit {
 
 export default class FSRemoteStorage extends EventEmitter
   implements RemoteStorage {
-  root: string;
+  public root: string;
 
-  constructor({ root }: FSRemoteStorageInit) {
+  public constructor({ root }: FSRemoteStorageInit) {
     super();
     this.root = root;
   }
 
-  async load() {
+  public async load(): Promise<void> {
     await mkdir(join(this.root, "files"), { recursive: true });
   }
 
-  async unload() {}
+  public async unload(): Promise<void> {}
 
-  async _getTree(): Promise<Tree> {
+  private async _getTree(): Promise<Tree> {
     try {
       const data = await readFile(join(this.root, "tree.json"), {
         encoding: "utf8",
@@ -41,18 +41,11 @@ export default class FSRemoteStorage extends EventEmitter
       const tree = JSON.parse(data);
       return tree;
     } catch (err) {
-      return {
-        "/": {
-          children: [],
-          ETag: Math.random()
-            .toString()
-            .substr(2),
-        },
-      };
+      return createTree();
     }
   }
 
-  async _writeTree(tree: any) {
+  private async _writeTree(tree: Tree): Promise<void> {
     return writeFile(
       join(this.root, "tree.json"),
       JSON.stringify(tree, null, 2),
@@ -62,7 +55,11 @@ export default class FSRemoteStorage extends EventEmitter
     );
   }
 
-  async getFolder(path: string, _req: IncomingMessage, res: ServerResponse) {
+  public async getFolder(
+    path: string,
+    _req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const tree = await this._getTree();
 
     const node = getNode(tree, path);
@@ -71,15 +68,22 @@ export default class FSRemoteStorage extends EventEmitter
       return;
     }
 
-    // if (!node.children) {
-    //   res.statusCode = 404;
-    //   return;
-    // }
-
     const items = node.children.reduce(
-      (acc: Record<string, any>, item: string) => {
+      (acc: Record<string, Record<string, string>>, item: string) => {
         const node = getNode(tree, path + item);
-        acc[item] = node;
+        if (item.endsWith("/")) {
+          acc[item] = {
+            ETag: node.ETag,
+          };
+        } else {
+          acc[item] = {
+            "Content-Type": node["Content-Type"],
+            "Content-Length": node["Content-Length"],
+            "Last-Modified": node["Last-Modified"],
+            ETag: node["ETag"],
+          };
+        }
+
         return acc;
       },
       {},
@@ -96,17 +100,23 @@ export default class FSRemoteStorage extends EventEmitter
     );
   }
 
-  async putDocument(path: string, req: IncomingMessage, res: ServerResponse) {
+  public async putDocument(
+    path: string,
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const tree = await this._getTree();
 
     const id = uuid();
     const ETag = Math.random()
       .toString()
       .substr(2);
+    const date = new Date().toUTCString();
+
     const node = {
       "Content-Type": req.headers["content-type"],
       "Content-Length": req.headers["content-length"],
-      "Last-Modified": new Date().toUTCString(),
+      "Last-Modified": date,
       ETag,
       id,
     };
@@ -118,14 +128,25 @@ export default class FSRemoteStorage extends EventEmitter
       }),
     );
 
-    setNode(tree, path, node);
+    const wasSet = setNode(tree, path, node);
+    if (!wasSet) {
+      res.statusCode = 409;
+      return;
+    }
     await this._writeTree(tree);
 
     res.statusCode = 200;
     res.setHeader("ETag", ETag);
+    // FIXME not in the spec
+    // https://github.com/remotestorage/spec/issues/173
+    res.setHeader("Last-Modified", date);
   }
 
-  async getDocument(path: string, _req: IncomingMessage, res: ServerResponse) {
+  public async getDocument(
+    path: string,
+    _req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const tree = await this._getTree();
 
     const node = getNode(tree, path);
@@ -144,11 +165,11 @@ export default class FSRemoteStorage extends EventEmitter
     await pipeline(fs.createReadStream(join(this.root, "files", node.id)), res);
   }
 
-  async deleteDocument(
+  public async deleteDocument(
     path: string,
     _req: IncomingMessage,
     res: ServerResponse,
-  ) {
+  ): Promise<void> {
     const tree = await this._getTree();
 
     const node = getNode(tree, path);
@@ -157,7 +178,11 @@ export default class FSRemoteStorage extends EventEmitter
       return;
     }
 
-    removeNode(tree, path);
+    const wasDeleted = removeNode(tree, path);
+    if (!wasDeleted) {
+      res.statusCode = 409;
+      return;
+    }
     await this._writeTree(tree);
 
     res.statusCode = 200;
@@ -167,7 +192,11 @@ export default class FSRemoteStorage extends EventEmitter
     });
   }
 
-  async headDocument(path: string, _req: IncomingMessage, res: ServerResponse) {
+  public async headDocument(
+    path: string,
+    _req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const tree = await this._getTree();
 
     const node = getNode(tree, path);
@@ -184,7 +213,11 @@ export default class FSRemoteStorage extends EventEmitter
     );
   }
 
-  async headFolder(path: string, _req: IncomingMessage, res: ServerResponse) {
+  public async headFolder(
+    path: string,
+    _req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const tree = await this._getTree();
 
     const node = getNode(tree, path);

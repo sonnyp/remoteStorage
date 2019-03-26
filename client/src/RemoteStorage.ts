@@ -1,4 +1,4 @@
-export interface DocumentDescription {
+export interface DocumentDescription extends Record<string, string> {
   ETag: string;
   "Content-Type": string;
   "Content-Length": string;
@@ -11,30 +11,24 @@ export interface FolderDescription {
 }
 
 export interface Node {
-  path: string;
-  size: number;
-  type: string;
-  version: string;
+  size: number | null;
+  type: string | null;
+  version: string | null;
+  date: Date | null;
+  items?: { string: DocumentDescription };
 }
 
-export interface NodeFolder extends Node {
-  folder: FolderDescription;
-}
-
-export interface NodeDocument extends Node {
-  date: Date;
-}
-
-function createNode(path: string, headers: Headers): Node {
+function createNode(headers: Headers): Node {
   const contentLength = headers.get("content-length");
   const contentType = headers.get("content-type");
   const etag = headers.get("etag");
+  const lastModified = headers.get("last-modified");
 
   return {
-    path,
-    size: contentLength === null ? NaN : +contentLength,
-    type: contentType || "",
-    version: etag || "",
+    size: contentLength === null ? null : +contentLength,
+    type: contentType === null ? null : contentType,
+    version: etag === null ? null : etag,
+    date: lastModified === null ? null : new Date(lastModified),
   };
 }
 
@@ -42,12 +36,15 @@ export default class RS {
   public url: string;
   public token: string;
 
-  constructor(url: string, token: string) {
+  public constructor(url: string, token: string) {
     this.url = url;
     this.token = token;
   }
 
-  private async fetch(path: string, options: RequestInit = {}) {
+  private async fetch(
+    path: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
     if (!options.headers) {
       options.headers = {};
     }
@@ -66,17 +63,17 @@ export default class RS {
     return response;
   }
 
-  async *createAsyncIterable(
+  public async *createAsyncIterable(
     path: string,
-  ): AsyncIterable<NodeFolder | NodeDocument> {
+  ): AsyncIterable<[string, Node]> {
     const response = await this.get(path);
     const folder: FolderDescription = await response.json();
-    const node: NodeFolder = {
-      ...createNode(path, response.headers),
-      folder,
+    const node = {
+      ...createNode(response.headers),
+      items: folder.items,
     };
 
-    yield node;
+    yield [path, node];
 
     const { items } = folder;
 
@@ -84,48 +81,64 @@ export default class RS {
       if (name.endsWith("/")) {
         yield* this.createAsyncIterable(path + name);
       } else {
-        const leafNode: NodeDocument = {
-          ...createNode(
-            path + name,
-            // FIXME why
-            // @ts-ignore
-            new Headers(item as Record<string, string>),
-          ),
-          date: new Date(item["Last-Modified"]),
+        const leafNode: Node = {
+          ...createNode(new Headers(item)),
         };
 
-        yield leafNode;
+        yield [path + name, leafNode];
       }
     }
   }
 
-  async *[Symbol.asyncIterator]() {
+  public async *[Symbol.asyncIterator](): AsyncIterable<Node> {
     yield* this.createAsyncIterable("/");
   }
 
-  public async get(path: string, options: RequestInit = {}) {
+  public async get(path: string, options: RequestInit = {}): Promise<Response> {
     return this.fetch(path, {
       method: "GET",
       ...options,
     });
   }
-  public async delete(path: string, options: RequestInit = {}) {
+
+  public async head(path: string, options: RequestInit = {}): Promise<Node> {
+    const res = await this.fetch(path, {
+      method: "HEAD",
+      ...options,
+    });
+    return createNode(res.headers);
+  }
+
+  public async delete(
+    path: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
     return this.fetch(path, {
       method: "DELETE",
       ...options,
     });
   }
 
-  public async put(path: string, data: BodyInit, options: RequestInit = {}) {
-    return this.fetch(path, {
+  public async put(
+    path: string,
+    data: Blob,
+    options: RequestInit = {},
+  ): Promise<Node> {
+    const res = await this.fetch(path, {
       method: "PUT",
       body: data,
       ...options,
     });
+
+    return {
+      ...createNode(res.headers),
+      size: data.size,
+      type: data.type || null,
+    };
   }
 
   // https://tools.ietf.org/html/draft-dejong-remotestorage-12#section-10
-  public static getRemoteStorageRecord(webfinger: any) {
+  public static getRemoteStorageRecord(webfinger: any): Record<string, string> {
     return webfinger.links.find((link: Record<string, string>) => {
       return (
         link.rel === "http://tools.ietf.org/id/draft-dejong-remotestorage" ||
@@ -142,12 +155,12 @@ export default class RS {
       record.properties["http://tools.ietf.org/html/rfc6749#section-4.2"];
     // let version = record.properties["http://remotestorage.io/spec/version"];
 
-    const client_id = params.client_id || document.title;
-    const redirect_uri = params.redirect_uri || location.href;
+    const clientId = params.client_id || document.title;
+    const redirectUri = params.redirect_uri || location.href;
 
     const url = new URL(authURL);
-    url.searchParams.append("client_id", client_id);
-    url.searchParams.append("redirect_uri", redirect_uri);
+    url.searchParams.append("client_id", clientId);
+    url.searchParams.append("redirect_uri", redirectUri);
     url.searchParams.append("response_type", "token");
     url.searchParams.append("scope", "*:rw");
 

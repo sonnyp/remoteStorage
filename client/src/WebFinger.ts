@@ -2,7 +2,7 @@ export async function lookup(
   resource: string,
   options: RequestInit = {},
   uri?: string,
-) {
+): Promise<any> {
   let domain;
 
   const resourceURL = new URL(resource);

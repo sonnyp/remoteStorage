@@ -1,65 +1,86 @@
 export interface Node {
   ETag: string;
-  children?: Array<string>;
+  children?: string[];
   id?: string;
 }
 
 export type Tree = Record<string, Node>;
 
-export function setNode(tree: Tree, path: string, node: Node) {
-  const [, ...nodes] = path.split("/");
+export function etag(): string {
+  return Math.random()
+    .toString()
+    .substr(2);
+}
 
-  const name = nodes.pop();
+export function createTree(): Tree {
+  return {
+    "/": {
+      children: [],
+      ETag: etag(),
+    },
+  };
+}
 
-  // let parent;
+export function setNode(tree: Tree, path: string, node: Node): boolean {
+  const [, ...branches] = path.split("/");
+  const name = branches.pop();
+  let cursor = "/";
 
-  // let c = '/'
-
-  for (let i = 0; i < nodes.length; i++) {
-    const branchName = `/${nodes[i]}/`;
-    let branch = tree[branchName];
-    //FIXME error if leaf
+  for (let i = 0; i <= branches.length; i++) {
+    let branch = tree[cursor];
     if (!branch) {
-      branch = tree[branchName] = {
+      branch = tree[cursor] = {
         children: [],
-        ETag: Math.random()
-          .toString()
-          .substr(2),
+        ETag: etag(),
       };
     } else {
+      if (!branch.children) {
+        return false;
+      }
       branch.ETag = (+branch.ETag + 1).toString();
     }
 
-    if (i === nodes.length - 1) {
-      branch.children.push(name);
+    const branchName = branches[i];
+    if (i === branches.length) {
+      if (!branch.children.includes(name)) {
+        branch.children.push(name);
+      }
+    } else {
+      if (!branch.children.includes(branchName + "/")) {
+        branch.children.push(branchName + "/");
+      }
     }
+
+    cursor += branchName + "/";
   }
 
   tree[path] = node;
+  return true;
 }
 
-export function removeNode(tree: Tree, path: string) {
-  const [, ...nodes] = path.split("/");
+export function removeNode(tree: Tree, path: string): boolean {
+  const [, ...branches] = path.split("/");
+  const name = branches.pop();
+  let cursor = "/";
 
-  const name = nodes.pop();
+  for (let i = 0; i <= branches.length; i++) {
+    const branch = tree[cursor];
+    if (!branch || !branch.children) {
+      return false;
+    }
 
-  // let parent;
-
-  // let c = '/'
-
-  for (let i = 0; i < nodes.length; i++) {
-    const branchName = `/${nodes[i]}/`;
-    let branch = tree[branchName];
     branch.ETag = (+branch.ETag + 1).toString();
 
-    if (i === nodes.length - 1) {
-      branch.children = branch.children.filter(
-        (child: string) => child !== name,
-      );
+    const branchName = branches[i];
+    if (i === branches.length) {
+      branch.children.filter(node => node !== name);
     }
+
+    cursor += branchName + "/";
   }
 
   delete tree[path];
+  return true;
 }
 
 export function getNode(tree: Tree, path: string): Node {

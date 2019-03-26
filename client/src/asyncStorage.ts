@@ -1,8 +1,8 @@
 export class AsyncStorage {
-  name: string;
+  public name: string;
   private open: Promise<IDBDatabase>;
 
-  constructor(name: string) {
+  public constructor(name: string) {
     this.name = name;
     this.open = new Promise((resolve, reject) => {
       const request = indexedDB.open(name);
@@ -14,14 +14,19 @@ export class AsyncStorage {
     });
   }
 
-  private async withObjectStore(mode: IDBTransactionMode) {
+  private async withObjectStore(
+    mode: IDBTransactionMode,
+  ): Promise<{
+    IDBObjectStore: IDBObjectStore;
+    IDBTransaction: IDBTransaction;
+  }> {
     const IDBDatabase = await this.open;
     const IDBTransaction = IDBDatabase.transaction(this.name, mode);
     const IDBObjectStore = IDBTransaction.objectStore(this.name);
     return { IDBObjectStore, IDBTransaction };
   }
 
-  async clear() {
+  public async clear(): Promise<void> {
     const { IDBObjectStore, IDBTransaction } = await this.withObjectStore(
       "readwrite",
     );
@@ -34,7 +39,7 @@ export class AsyncStorage {
     });
   }
 
-  async setItem(key: IDBValidKey, value: any) {
+  public async set(key: IDBValidKey, value: any): Promise<void> {
     const { IDBObjectStore, IDBTransaction } = await this.withObjectStore(
       "readwrite",
     );
@@ -47,7 +52,7 @@ export class AsyncStorage {
     });
   }
 
-  async getItem(key: IDBValidKey) {
+  public async get(key: IDBValidKey): Promise<any> {
     const { IDBObjectStore, IDBTransaction } = await this.withObjectStore(
       "readonly",
     );
@@ -63,7 +68,7 @@ export class AsyncStorage {
     });
   }
 
-  async removeItem(key: IDBValidKey) {
+  public async delete(key: IDBValidKey): Promise<void> {
     const { IDBObjectStore, IDBTransaction } = await this.withObjectStore(
       "readwrite",
     );
