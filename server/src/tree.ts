@@ -1,3 +1,13 @@
+export function etag(): string {
+  return (
+    '"' +
+    Math.random()
+      .toString()
+      .substr(2) +
+    '"'
+  );
+}
+
 export interface Node {
   ETag: string;
   children?: string[];
@@ -6,12 +16,6 @@ export interface Node {
 
 export type Tree = Record<string, Node>;
 
-export function etag(): string {
-  return Math.random()
-    .toString()
-    .substr(2);
-}
-
 export function createTree(): Tree {
   return {
     "/": {
@@ -19,6 +23,10 @@ export function createTree(): Tree {
       ETag: etag(),
     },
   };
+}
+
+export function getNode(tree: Tree, path: string): Node {
+  return tree[path];
 }
 
 export function setNode(tree: Tree, path: string, node: Node): boolean {
@@ -37,7 +45,7 @@ export function setNode(tree: Tree, path: string, node: Node): boolean {
       if (!branch.children) {
         return false;
       }
-      branch.ETag = (+branch.ETag + 1).toString();
+      branch.ETag = etag();
     }
 
     const branchName = branches[i];
@@ -69,7 +77,7 @@ export function removeNode(tree: Tree, path: string): boolean {
       return false;
     }
 
-    branch.ETag = (+branch.ETag + 1).toString();
+    branch.ETag = etag();
 
     const branchName = branches[i];
     if (i === branches.length) {
@@ -81,8 +89,4 @@ export function removeNode(tree: Tree, path: string): boolean {
 
   delete tree[path];
   return true;
-}
-
-export function getNode(tree: Tree, path: string): Node {
-  return tree[path];
 }

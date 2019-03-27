@@ -1,4 +1,4 @@
-import { createTree, etag, getNode, setNode, removeNode, Node } from "./tree";
+import { etag, createTree, getNode, setNode, removeNode, Node } from "./tree";
 
 describe("createTree", () => {
   test("returns an empty tree with a root", () => {

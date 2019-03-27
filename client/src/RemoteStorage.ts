@@ -11,25 +11,37 @@ export interface FolderDescription {
 }
 
 export interface Node {
-  size: number | null;
-  type: string | null;
-  version: string | null;
-  date: Date | null;
+  size?: number;
+  type?: string;
+  version?: string;
+  date?: Date;
   items?: { string: DocumentDescription };
 }
 
 function createNode(headers: Headers): Node {
-  const contentLength = headers.get("content-length");
-  const contentType = headers.get("content-type");
-  const etag = headers.get("etag");
-  const lastModified = headers.get("last-modified");
+  const node: Node = {};
 
-  return {
-    size: contentLength === null ? null : +contentLength,
-    type: contentType === null ? null : contentType,
-    version: etag === null ? null : etag,
-    date: lastModified === null ? null : new Date(lastModified),
-  };
+  const contentLength = headers.get("content-length");
+  if (contentLength !== null) {
+    node.size = +contentLength;
+  }
+
+  const contentType = headers.get("content-type");
+  if (contentType !== null) {
+    node.type = contentType;
+  }
+
+  const etag = headers.get("etag");
+  if (etag !== null) {
+    node.version = etag;
+  }
+
+  const lastModified = headers.get("last-modified");
+  if (lastModified !== null) {
+    node.date = new Date(lastModified);
+  }
+
+  return node;
 }
 
 export default class RS {
@@ -90,7 +102,7 @@ export default class RS {
     }
   }
 
-  public async *[Symbol.asyncIterator](): AsyncIterable<Node> {
+  public async *[Symbol.asyncIterator](): AsyncIterable<[string, Node]> {
     yield* this.createAsyncIterable("/");
   }
 

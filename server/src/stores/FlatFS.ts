@@ -7,6 +7,7 @@ import { setNode, getNode, removeNode, Tree, createTree } from "../tree";
 import stream from "stream";
 import { EventEmitter } from "events";
 import { RemoteStorage } from "../RemoteStorage";
+import { CRC32Stream } from "crc32-stream";
 
 const mkdir = promisify(fs.mkdir);
 const readFile = promisify(fs.readFile);
@@ -108,10 +109,19 @@ export default class FSRemoteStorage extends EventEmitter
     const tree = await this._getTree();
 
     const id = uuid();
-    const ETag = Math.random()
-      .toString()
-      .substr(2);
     const date = new Date().toUTCString();
+
+    const checksum = new CRC32Stream();
+
+    await pipeline(
+      req,
+      checksum,
+      fs.createWriteStream(join(this.root, "files", id), {
+        flags: "w",
+      }),
+    );
+
+    const ETag = '"' + checksum.hex() + '"';
 
     const node = {
       "Content-Type": req.headers["content-type"],
@@ -120,13 +130,6 @@ export default class FSRemoteStorage extends EventEmitter
       ETag,
       id,
     };
-
-    await pipeline(
-      req,
-      fs.createWriteStream(join(this.root, "files", id), {
-        flags: "w",
-      }),
-    );
 
     const wasSet = setNode(tree, path, node);
     if (!wasSet) {
@@ -158,7 +161,8 @@ export default class FSRemoteStorage extends EventEmitter
     res.statusCode = 200;
     ["Content-Length", "Last-Modified", "ETag", "Content-Type"].forEach(
       header => {
-        res.setHeader(header, node[header]);
+        const value = node[header];
+        if (value) res.setHeader(header, value);
       },
     );
 
@@ -208,7 +212,8 @@ export default class FSRemoteStorage extends EventEmitter
     res.statusCode = 200;
     ["Content-Length", "Last-Modified", "ETag", "Content-Type"].forEach(
       header => {
-        res.setHeader(header, node[header]);
+        const value = node[header];
+        if (value) res.setHeader(header, value);
       },
     );
   }

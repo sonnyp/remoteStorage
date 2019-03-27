@@ -105,8 +105,12 @@ if (syncButton) {
 async function sync() {
   const asyncStorage = new AsyncStorage("remoteStorage.js");
   for await (const [path, node] of rs) {
-    console.log(path, node);
-    // const {path, ...node} =
+    console.log(path);
+    const local = await asyncStorage.get(path);
+
+    if (path === "/" && local && local.version === node.version) {
+      break;
+    }
 
     await asyncStorage.set(path, node);
   }
