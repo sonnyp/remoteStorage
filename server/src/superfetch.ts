@@ -27,5 +27,9 @@ export default async function superfetch(
   }
 
   const url = serverAddress(app, path);
-  return fetch(url, init);
+  const req = await fetch(url, init);
+
+  await new Promise(resolve => app.close(resolve));
+
+  return req;
 }

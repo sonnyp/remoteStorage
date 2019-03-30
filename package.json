@@ -5,7 +5,8 @@
     "tsc:server": "tsc -p server -W",
     "dev:client": "live-server --no-browser client/dist",
     "dev:server": "nodemon --watch server server/dist/server.js | ./server/node_modules/.bin/pino-pretty",
-    "test": "jest && eslint client/src/**/*.ts server/src/**/*.ts"
+    "lint": "eslint client/src/**/*.ts server/src/**/*.ts",
+    "test": "jest && npm run lint"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
@@ -14,6 +15,7 @@
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-prettier": "^3.0.1",
+    "husky": "^1.3.1",
     "jest": "^24.5.0",
     "live-server": "^1.2.1",
     "nodemon": "^1.18.10",

@@ -17,31 +17,6 @@ import { lookup } from "./WebFinger.js";
 const resource = "acct:sonny@5apps.com";
 const uri = undefined;
 
-async function main() {
-  const url = new URL(window.location.href);
-
-  // Use url searchParams to parse hash
-  url.search = url.hash.substr(1);
-  const token = url.searchParams.get("access_token");
-
-  if (token) {
-    localStorage.setItem("token", token);
-    // Remove hash from current url
-    history.replaceState({}, "", url.pathname);
-    await connected(token);
-  } else {
-    const token = localStorage.getItem("token");
-    console.log("storage", token);
-    if (token) {
-      await connected(token);
-    } else {
-      await connect();
-    }
-  }
-}
-
-// main();
-
 async function connect() {
   const webfinger = await lookup(resource, undefined, uri);
   const record = RemoteStorage.getRemoteStorageRecord(webfinger);
@@ -80,6 +55,31 @@ async function connected(token: string) {
   }
 }
 
+async function main() {
+  const url = new URL(window.location.href);
+
+  // Use url searchParams to parse hash
+  url.search = url.hash.substr(1);
+  const token = url.searchParams.get("access_token");
+
+  if (token) {
+    localStorage.setItem("token", token);
+    // Remove hash from current url
+    history.replaceState({}, "", url.pathname);
+    await connected(token);
+  } else {
+    const token = localStorage.getItem("token");
+    console.log("storage", token);
+    if (token) {
+      await connected(token);
+    } else {
+      await connect();
+    }
+  }
+}
+
+// main();
+
 const rs = new RemoteStorage("http://localhost:9090", "foobar");
 
 (async () => {
@@ -95,13 +95,6 @@ if (listButton) {
   });
 }
 
-const syncButton = document.querySelector("button#sync");
-if (syncButton) {
-  syncButton.addEventListener("click", async () => {
-    sync();
-  });
-}
-
 async function sync() {
   const asyncStorage = new AsyncStorage("remoteStorage.js");
   for await (const [path, node] of rs) {
@@ -114,6 +107,13 @@ async function sync() {
 
     await asyncStorage.set(path, node);
   }
+}
+
+const syncButton = document.querySelector("button#sync");
+if (syncButton) {
+  syncButton.addEventListener("click", async () => {
+    sync();
+  });
 }
 
 const form = document.querySelector("form");
