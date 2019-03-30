@@ -21,7 +21,7 @@ const handler = createRequestHandler(remoteStorage);
 
 const server = createServer({}, (req, res) => {
   httplogger(req, res);
-  handler(req, res);
+  handler(req, res).catch(err => logger.error(err, "RemoteStorage error"));
 });
 
 (async () => {
