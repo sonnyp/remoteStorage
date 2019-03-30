@@ -1,3 +1,16 @@
 {
-  "private": true
+  "private": true,
+  "scripts": {
+    "dev": "webpack-dev-server"
+  },
+  "dependencies": {
+    "copy-webpack-plugin": "^5.0.2",
+    "kv-storage-polyfill": "^1.0.0"
+  },
+  "devDependencies": {
+    "ts-loader": "^5.3.3",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0",
+    "webpack-dev-server": "^3.2.1"
+  }
 }

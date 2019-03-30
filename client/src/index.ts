@@ -1,6 +1,7 @@
-import RemoteStorage from "./RemoteStorage.js";
-import { AsyncStorage } from "./AsyncStorage.js";
-import { lookup } from "./WebFinger.js";
+import RemoteStorage from "./RemoteStorage";
+// import { Storage } from "./storage.js";
+import { lookup } from "./WebFinger";
+import { StorageArea } from "kv-storage-polyfill";
 
 // import {
 //   createStringStreamFromBlob,
@@ -96,16 +97,16 @@ if (listButton) {
 }
 
 async function sync() {
-  const asyncStorage = new AsyncStorage("remoteStorage.js");
+  const storage = new StorageArea("remoteStorage");
   for await (const [path, node] of rs) {
     console.log(path);
-    const local = await asyncStorage.get(path);
+    const local = await storage.get(path);
 
     if (path === "/" && local && local.version === node.version) {
       break;
     }
 
-    await asyncStorage.set(path, node);
+    await storage.set(path, node);
   }
 }
 

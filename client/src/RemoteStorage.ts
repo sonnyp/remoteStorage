@@ -44,7 +44,7 @@ function createNode(headers: Headers): Node {
   return node;
 }
 
-export default class RS {
+export default class RS implements AsyncIterable<[string, Node]> {
   public url: string;
   public token: string;
 
@@ -102,7 +102,7 @@ export default class RS {
     }
   }
 
-  public async *[Symbol.asyncIterator](): AsyncIterable<[string, Node]> {
+  public async *[Symbol.asyncIterator](): AsyncIterator<[string, Node]> {
     yield* this.createAsyncIterable("/");
   }
 
