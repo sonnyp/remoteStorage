@@ -148,34 +148,34 @@ export default class RS implements AsyncIterable<[string, Node]> {
       type: data.type || null,
     };
   }
+}
 
-  // https://tools.ietf.org/html/draft-dejong-remotestorage-12#section-10
-  public static getRemoteStorageRecord(webfinger: any): Record<string, string> {
-    return webfinger.links.find((link: Record<string, string>) => {
-      return (
-        link.rel === "http://tools.ietf.org/id/draft-dejong-remotestorage" ||
-        link.rel === "remotestorage"
-      );
-    });
-  }
+// https://tools.ietf.org/html/draft-dejong-remotestorage-12#section-10
+export function getRemoteStorageRecord(webfinger: any): Record<string, string> {
+  return webfinger.links.find((link: Record<string, string>) => {
+    return (
+      link.rel === "http://tools.ietf.org/id/draft-dejong-remotestorage" ||
+      link.rel === "remotestorage"
+    );
+  });
+}
 
-  public static buildAuthURL(
-    record: any,
-    params: Record<string, string> = {},
-  ): URL {
-    let authURL =
-      record.properties["http://tools.ietf.org/html/rfc6749#section-4.2"];
-    // let version = record.properties["http://remotestorage.io/spec/version"];
+export function buildAuthURL(
+  record: any,
+  params: Record<string, string> = {},
+): URL {
+  let authURL =
+    record.properties["http://tools.ietf.org/html/rfc6749#section-4.2"];
+  // let version = record.properties["http://remotestorage.io/spec/version"];
 
-    const clientId = params.client_id || document.title;
-    const redirectUri = params.redirect_uri || location.href;
+  const clientId = params.client_id || document.title;
+  const redirectUri = params.redirect_uri || location.href;
 
-    const url = new URL(authURL);
-    url.searchParams.append("client_id", clientId);
-    url.searchParams.append("redirect_uri", redirectUri);
-    url.searchParams.append("response_type", "token");
-    url.searchParams.append("scope", "*:rw");
+  const url = new URL(authURL);
+  url.searchParams.append("client_id", clientId);
+  url.searchParams.append("redirect_uri", redirectUri);
+  url.searchParams.append("response_type", "token");
+  url.searchParams.append("scope", "*:rw");
 
-    return url;
-  }
+  return url;
 }

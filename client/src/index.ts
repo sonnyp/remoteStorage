@@ -1,4 +1,7 @@
-import RemoteStorage from "./RemoteStorage";
+import RemoteStorage, {
+  getRemoteStorageRecord,
+  buildAuthURL,
+} from "./RemoteStorage";
 // import { Storage } from "./storage.js";
 import { lookup } from "./WebFinger";
 import { StorageArea } from "kv-storage-polyfill";
@@ -20,14 +23,14 @@ const uri = undefined;
 
 async function connect() {
   const webfinger = await lookup(resource, undefined, uri);
-  const record = RemoteStorage.getRemoteStorageRecord(webfinger);
-  const url = RemoteStorage.buildAuthURL(record);
+  const record = getRemoteStorageRecord(webfinger);
+  const url = buildAuthURL(record);
   window.location.href = url.toString();
 }
 
 async function connected(token: string) {
   const webfinger = await lookup(resource, undefined, uri);
-  const record = RemoteStorage.getRemoteStorageRecord(webfinger);
+  const record = getRemoteStorageRecord(webfinger);
   const rs = new RemoteStorage(record.href, token);
   console.log(rs, token);
 
@@ -81,7 +84,7 @@ async function main() {
 
 // main();
 
-const rs = new RemoteStorage("http://localhost:9090", "foobar");
+const rs = new RemoteStorage("http://localhost:9090/storage", "foobar");
 
 (async () => {
   // console.log(await rs.get("/hello/"));
