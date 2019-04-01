@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
+import { Http2ServerRequest, Http2ServerResponse } from "http2";
 import { parse } from "url";
 
 export interface RemoteStorage {
@@ -6,43 +7,46 @@ export interface RemoteStorage {
   unload(): Promise<void>;
   getFolder(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void>;
   getDocument(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void>;
   putDocument(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void>;
   deleteDocument(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void>;
   headFolder(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void>;
   headDocument(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void>;
 }
 
 export function createRequestHandler(
   remoteStorage: RemoteStorage,
-): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
+): (
+  req: IncomingMessage | Http2ServerRequest,
+  res: ServerResponse | Http2ServerResponse,
+) => Promise<void> {
   function options(
     path: string,
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): void {
     // const requestHeaders = req.headers["access-control-request-headers"];
     // const requestMethod = req.headers["access-control-request-method"];
@@ -79,7 +83,7 @@ export function createRequestHandler(
 
   async function proceed(req, res): Promise<void> {
     const { method } = req;
-    const path = parse(req.url).pathname;
+    const path = decodeURI(parse(req.url).pathname);
 
     // FIXME Access-Control-Expose-Headers is not in the spec
     // https://github.com/remotestorage/spec/issues/172
@@ -130,13 +134,10 @@ export function createRequestHandler(
   }
 
   return async function remoteStorageRequestHandler(
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: IncomingMessage | Http2ServerRequest,
+    res: ServerResponse | Http2ServerResponse,
   ): Promise<void> {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
+    res.setHeader("Access-Control-Allow-Origin", "*");
 
     try {
       await proceed(req, res);

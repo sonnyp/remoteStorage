@@ -1,15 +1,22 @@
 import { IncomingMessage, ServerResponse } from "http";
+import { Http2ServerRequest, Http2ServerResponse } from "http2";
 
-export function createRequestHandler(): (
-  req: IncomingMessage,
-  res: ServerResponse,
+interface Options {
+  domain: string;
+}
+
+export function createRequestHandler({
+  domain,
+}: Options): (
+  req: IncomingMessage | Http2ServerRequest,
+  res: ServerResponse | Http2ServerResponse,
 ) => Promise<void> {
   return async function webFingerRequestHandler(
-    req: IncomingMessage,
+    req: IncomingMessage | Http2ServerRequest,
     res: ServerResponse,
   ): Promise<void> {
     const { method } = req;
-    const url = new URL(req.url, "http://localhost");
+    const url = new URL(req.url, `https://${domain}`);
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -33,14 +40,13 @@ export function createRequestHandler(): (
         subject: resource,
         links: [
           {
-            href: "localhost:9090/",
+            href: `https://${domain}/storage`,
             rel: "http://tools.ietf.org/id/draft-dejong-remotestorag\
 e",
             properties: {
               "http://remotestorage.io/spec/version":
                 "draft-dejong-remotestorage-12",
-              "http://tools.ietf.org/html/rfc6749#section-4.2":
-                "localhost:9090/oauth/sonny",
+              "http://tools.ietf.org/html/rfc6749#section-4.2": `https://${domain}/oauth/sonny`,
             },
           },
         ],

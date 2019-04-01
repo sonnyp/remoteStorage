@@ -1,5 +1,6 @@
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
+// const { readFileSync } = require("fs");
 
 module.exports = {
   entry: "./src/index.ts",
@@ -8,6 +9,13 @@ module.exports = {
 
   mode: "development",
   devtool: "source-map",
+
+  // devServer: {
+  // https: true,
+  // port: 443,
+  // key: readFileSync(path.join(__dirname, "../certs/server-key.pem")),
+  // cert: readFileSync(path.join(__dirname, "../certs/server-cert.pem")),
+  // },
 
   module: {
     rules: [

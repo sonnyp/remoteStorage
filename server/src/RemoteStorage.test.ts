@@ -38,24 +38,9 @@ class MockRemoteStorage implements RemoteStorage {
 }
 
 describe("createRequestHandler", () => {
-  test("sends Access-Control-Allow-Origin response header to the origin request header", async () => {
-    const withoutOrigin = await fetch(
-      createRequestHandler(new MockRemoteStorage()),
-      "/",
-    );
-    expect(withoutOrigin.headers.get("Access-Control-Allow-Origin")).toBe(null);
-
-    const Origin = "example.com";
-    const withOrigin = await fetch(
-      createRequestHandler(new MockRemoteStorage()),
-      "/",
-      {
-        headers: {
-          Origin,
-        },
-      },
-    );
-    expect(withOrigin.headers.get("Access-Control-Allow-Origin")).toBe(Origin);
+  test("sends Access-Control-Allow-Origin response header set to *", async () => {
+    const res = await fetch(createRequestHandler(new MockRemoteStorage()), "/");
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 
   test("throws and responds with 500 if an operation fails", async () => {
@@ -84,45 +69,45 @@ describe("createRequestHandler", () => {
 
 describe("get folder", () => {
   test("sends Access-Control-Expose-Headers", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/",
       { method: "get" },
     );
-    expect(withoutOrigin.headers.get("Access-Control-Expose-Headers")).toBe(
+    expect(res.headers.get("Access-Control-Expose-Headers")).toBe(
       "Content-Length, ETag",
     );
   });
 
   test("sends Cache-Control header set to no-cache", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/",
       { method: "get" },
     );
-    expect(withoutOrigin.headers.get("Cache-Control")).toBe("no-cache");
+    expect(res.headers.get("Cache-Control")).toBe("no-cache");
   });
 });
 
 describe("get file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/foo",
       { method: "get" },
     );
-    expect(withoutOrigin.headers.get("Access-Control-Expose-Headers")).toBe(
+    expect(res.headers.get("Access-Control-Expose-Headers")).toBe(
       "Content-Length, ETag",
     );
   });
 
   test("sends Cache-Control header set to no-cache", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/",
       { method: "get" },
     );
-    expect(withoutOrigin.headers.get("Cache-Control")).toBe("no-cache");
+    expect(res.headers.get("Cache-Control")).toBe("no-cache");
   });
 });
 
@@ -141,14 +126,12 @@ describe("put folder", () => {
 
 describe("put file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/foo",
       { method: "put" },
     );
-    expect(withoutOrigin.headers.get("Access-Control-Expose-Headers")).toBe(
-      "ETag",
-    );
+    expect(res.headers.get("Access-Control-Expose-Headers")).toBe("ETag");
   });
 });
 
@@ -167,25 +150,23 @@ describe("delete folder", () => {
 
 describe("delete file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/foo",
       { method: "delete" },
     );
-    expect(withoutOrigin.headers.get("Access-Control-Expose-Headers")).toBe(
-      "ETag",
-    );
+    expect(res.headers.get("Access-Control-Expose-Headers")).toBe("ETag");
   });
 });
 
 describe("head folder", () => {
   test("sends Access-Control-Expose-Headers", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/",
       { method: "head" },
     );
-    expect(withoutOrigin.headers.get("Access-Control-Expose-Headers")).toBe(
+    expect(res.headers.get("Access-Control-Expose-Headers")).toBe(
       "Content-Length, ETag",
     );
   });
@@ -193,12 +174,12 @@ describe("head folder", () => {
 
 describe("head file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
-    const withoutOrigin = await fetch(
+    const res = await fetch(
       createRequestHandler(new MockRemoteStorage()),
       "/foo",
       { method: "head" },
     );
-    expect(withoutOrigin.headers.get("Access-Control-Expose-Headers")).toBe(
+    expect(res.headers.get("Access-Control-Expose-Headers")).toBe(
       "Content-Length, ETag",
     );
   });

@@ -6,6 +6,8 @@ import RemoteStorage, {
 import { lookup } from "./WebFinger";
 import { StorageArea } from "kv-storage-polyfill";
 
+const domain = "foobar";
+
 // import {
 //   createStringStreamFromBlob,
 //   createAsyncIteratorFromStream,
@@ -14,21 +16,21 @@ import { StorageArea } from "kv-storage-polyfill";
 // const token = "5ad04ac40a6a091ca4bafa8019deae78";
 
 // dev
-// const resource = "acct:sonny@localhost";
+const resource = `acct:sonny@${domain}`;
 // const uri = "http://localhost:8000/.well-known/webfinger";
 
 // prod
-const resource = "acct:sonny@5apps.com";
+// const resource = "acct:sonny@5apps.com";
 const uri = undefined;
 
-async function connect() {
+async function connect(): Promise<void> {
   const webfinger = await lookup(resource, undefined, uri);
   const record = getRemoteStorageRecord(webfinger);
   const url = buildAuthURL(record);
   window.location.href = url.toString();
 }
 
-async function connected(token: string) {
+async function connected(token: string): Promise<void> {
   const webfinger = await lookup(resource, undefined, uri);
   const record = getRemoteStorageRecord(webfinger);
   const rs = new RemoteStorage(record.href, token);
@@ -59,9 +61,8 @@ async function connected(token: string) {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const url = new URL(window.location.href);
-
   // Use url searchParams to parse hash
   url.search = url.hash.substr(1);
   const token = url.searchParams.get("access_token");
@@ -73,7 +74,6 @@ async function main() {
     await connected(token);
   } else {
     const token = localStorage.getItem("token");
-    console.log("storage", token);
     if (token) {
       await connected(token);
     } else {
@@ -82,9 +82,9 @@ async function main() {
   }
 }
 
-// main();
+main();
 
-const rs = new RemoteStorage("http://localhost:9090/storage", "foobar");
+const rs = new RemoteStorage("https://localhost/storage", "foobar");
 
 (async () => {
   // console.log(await rs.get("/hello/"));
@@ -99,7 +99,7 @@ if (listButton) {
   });
 }
 
-async function sync() {
+async function sync(): Promise<void> {
   const storage = new StorageArea("remoteStorage");
   for await (const [path, node] of rs) {
     console.log(path);
