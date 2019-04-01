@@ -1,6 +1,6 @@
 import { createSecureServer } from "http2";
 import { createRequestHandler as createRemoteStorageRequestHandler } from "./RemoteStorage";
-import FSRemoteStorage from "./stores/FlatFS";
+import FSRemoteStorage from "./FlatFS";
 import { join } from "path";
 import pino, { final } from "pino";
 import pinoHttp from "pino-http";

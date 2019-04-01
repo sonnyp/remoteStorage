@@ -86,3 +86,42 @@ describe("setNode", () => {
     expect(tree["/foo/bar"]).toBe(bar);
   });
 });
+
+describe("removeNode", () => {
+  test("removes the child from parent folders", () => {
+    const tree = {
+      "/": {
+        children: ["public/"],
+        ETag: '"6741893013153855"',
+      },
+      "/a/": {
+        children: ["a/"],
+        ETag: '"8321645986433857"',
+      },
+      "/a/b/": {
+        children: ["foo", "bar"],
+        ETag: '"1231231312312535"',
+      },
+      "/a/b/foo": {
+        "Content-Type": "image/png",
+        "Content-Length": "613335",
+        "Last-Modified": "Mon, 01 Apr 2019 12:34:45 GMT",
+        ETag: '"452BDB0F"',
+        id: "94e2d126-48a6-4427-ae60-be7e54ed9306",
+      },
+      "/a/b/bar": {
+        "Content-Type": "image/png",
+        "Content-Length": "126005",
+        "Last-Modified": "Mon, 01 Apr 2019 12:36:30 GMT",
+        ETag: '"06835C66"',
+        id: "8088965b-3a95-41d3-be75-3599c0156ca6",
+      },
+    };
+
+    expect(tree["/a/b/"].children).toEqual(["foo", "bar"]);
+
+    removeNode(tree, "/a/b/foo");
+
+    expect(tree["/a/b/"].children).toEqual(["bar"]);
+  });
+});

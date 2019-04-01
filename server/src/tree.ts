@@ -73,6 +73,7 @@ export function removeNode(tree: Tree, path: string): boolean {
 
   for (let i = 0; i <= branches.length; i++) {
     const branch = tree[cursor];
+
     if (!branch || !branch.children) {
       return false;
     }
@@ -81,7 +82,7 @@ export function removeNode(tree: Tree, path: string): boolean {
 
     const branchName = branches[i];
     if (i === branches.length) {
-      branch.children.filter(node => node !== name);
+      branch.children = branch.children.filter(node => node !== name);
     }
 
     cursor += branchName + "/";

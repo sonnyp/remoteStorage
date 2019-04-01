@@ -3,10 +3,10 @@ import fs from "fs";
 import { join } from "path";
 import { promisify } from "util";
 import uuid from "uuid/v4";
-import { setNode, getNode, removeNode, Tree, createTree } from "../tree";
+import { setNode, getNode, removeNode, Tree, createTree } from "./tree";
 import stream from "stream";
 import { EventEmitter } from "events";
-import { RemoteStorage } from "../RemoteStorage";
+import { RemoteStorage } from "./RemoteStorage";
 import { CRC32Stream } from "crc32-stream";
 
 const mkdir = promisify(fs.mkdir);
