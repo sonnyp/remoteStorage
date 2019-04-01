@@ -1,3 +1,5 @@
 import React from "react";
 
-export default () => <div>b</div>;
+export default function b() {
+  return <div>b</div>;
+}
