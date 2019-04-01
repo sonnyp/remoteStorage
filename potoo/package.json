@@ -5,12 +5,18 @@
     "start": "cross-env NODE_ENV=production node .next/server"
   },
   "dependencies": {
+    "@zeit/next-sass": "^1.0.1",
+    "fastify": "^2.1.0",
+    "fastify-nextjs": "^4.1.0",
     "next": "^8.0.3",
+    "next-transpile-modules": "^2.2.0",
+    "node-sass": "^4.11.0",
     "react": "^16.8.4",
+    "react-bulma-components": "^3.0.1-4",
     "react-dom": "^16.8.4"
   },
   "devDependencies": {
-    "@types/next": "^8.0.1",
+    "@types/next": "^8.0.3",
     "@types/react": "^16.8.8",
     "@zeit/next-typescript": "^1.1.1",
     "cross-env": "^5.2.0",
