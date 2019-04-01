@@ -1,44 +1,34 @@
 import React, { Component, ReactNode } from "react";
 import { NextContext } from "next";
 import Button from "react-bulma-components/lib/components/button";
+import RemoteStorage from "../RemoteStorage";
 
 interface Props {
-  query: {
-    username?: string;
-    client_id?: string;
-    redirect_uri?: string;
-    response_type?: string;
-    scope?: string;
-  };
+  path: string;
+  folder: any;
 }
 
 export default class OAuth extends Component<Props> {
   public static async getInitialProps({ query }: NextContext): Promise<Props> {
-    return { query };
+    const { path } = query;
+
+    const rs = new RemoteStorage(`https://foobar/storage`, "");
+    const res = await rs.get(path);
+    const folder = await res.json();
+
+    return { path, folder };
   }
 
   public render(): ReactNode {
     /* eslint-disable @typescript-eslint/camelcase */
 
-    const {
-      username,
-      client_id,
-      redirect_uri,
-      response_type,
-      scope,
-    } = this.props.query;
+    const { path, folder } = this.props;
 
     return (
       <div>
         <Button color="primary">My Bulma button</Button>
-        Hello World{" "}
-        {JSON.stringify({
-          username,
-          client_id,
-          redirect_uri,
-          response_type,
-          scope,
-        })}
+        {path}
+        {JSON.stringify(folder)}
       </div>
     );
 
