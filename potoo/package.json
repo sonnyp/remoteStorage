@@ -5,7 +5,7 @@
     "start": "cross-env NODE_ENV=production node .next/server"
   },
   "dependencies": {
-    "next": "latest",
+    "next": "^8.0.3",
     "react": "^16.8.4",
     "react-dom": "^16.8.4"
   },
