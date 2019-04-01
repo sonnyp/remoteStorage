@@ -17,21 +17,18 @@ const domain = "foobar";
 
 // dev
 const resource = `acct:sonny@${domain}`;
-// const uri = "http://localhost:8000/.well-known/webfinger";
-
 // prod
 // const resource = "acct:sonny@5apps.com";
-const uri = undefined;
 
 async function connect(): Promise<void> {
-  const webfinger = await lookup(resource, undefined, uri);
+  const webfinger = await lookup(resource);
   const record = getRemoteStorageRecord(webfinger);
   const url = buildAuthURL(record);
   window.location.href = url.toString();
 }
 
 async function connected(token: string): Promise<void> {
-  const webfinger = await lookup(resource, undefined, uri);
+  const webfinger = await lookup(resource);
   const record = getRemoteStorageRecord(webfinger);
   const rs = new RemoteStorage(record.href, token);
   console.log(rs, token);
