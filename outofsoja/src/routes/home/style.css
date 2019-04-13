@@ -1,5 +1,80 @@
-.home {
-	padding: 56px 20px;
-	min-height: 100%;
-	width: 100%;
+.root {
+  padding-top: 64px;
+  font-size: 24px;
+  padding-left: 10px;
+  padding-right: 10px;
+  min-height: 100%;
+  width: 100%;
+}
+
+.list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  height: 46px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.item > div:first-child {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.remove {
+  all: unset;
+  width: 46px;
+  text-align: center;
+}
+
+.done {
+  text-decoration: line-through;
+}
+
+.item:nth-child(even) {
+  border-top: solid thin grey;
+  border-bottom: solid thin grey;
+}
+
+.item:last-child {
+  border-bottom: solid thin grey;
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  height: 46px;
+  border-top: solid thin grey;
+  border-bottom: solid thin grey;
+}
+
+.form input[type="text"] {
+  border: 0;
+  font-size: 24px;
+  outline: none;
+  flex: 1;
+}
+
+.form input[type="submit"] {
+  all: unset;
+  background-color: inherit;
+  width: 46px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.input {
+  flex: 1;
+}
+
+.submit {
 }
