@@ -1,6 +1,6 @@
 module.exports = {
   hooks: {
-    "pre-commit": "npm run lint",
-    "pre-push": "jest",
+    "pre-commit": "pretty-quick --staged",
+    "pre-push": "npm run test",
   },
 };
