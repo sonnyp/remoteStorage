@@ -1,3 +1,5 @@
+import HTTPError from "./HTTPError";
+
 export interface DocumentDescription extends Record<string, string> {
   ETag: string;
   "Content-Type": string;
@@ -63,22 +65,20 @@ export default class RS implements AsyncIterable<[string, Node]> {
     // @ts-ignore
     options.headers["Authorization"] = `Bearer ${this.token}`;
 
-    const response = await fetch(this.url + path, options);
-    if (!response.ok) {
-      const error = Error(response.statusText);
-      // @ts-ignore Property 'response' does not exist on type 'Error'.
-      error.response = response.status;
-      // @ts-ignore Property 'status' does not exist on type 'Error'.
-      error.status = response.status;
-      throw error;
-    }
+    const response = await fetch(this.url + path, {
+      cache: "no-store",
+      ...options,
+    });
+    // if (!response.ok) {
+    // throw new HTTPError(response);
+    // }
     return response;
   }
 
   public async *createAsyncIterable(
     path: string,
   ): AsyncIterable<[string, Node]> {
-    const response = await this.get(path);
+    const response = await this._get(path);
     const folder: FolderDescription = await response.json();
     const node = {
       ...createNode(response.headers),
@@ -106,11 +106,40 @@ export default class RS implements AsyncIterable<[string, Node]> {
     yield* this.createAsyncIterable("/");
   }
 
-  public async get(path: string, options: RequestInit = {}): Promise<Response> {
+  public async _get(
+    path: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
     return this.fetch(path, {
       method: "GET",
       ...options,
     });
+  }
+
+  public async get(
+    path: string,
+    ifNoneMatch?: string,
+    options: RequestInit = {},
+  ): Promise<[Node | null, Response]> {
+    const headers = {};
+    if (ifNoneMatch) {
+      headers["If-None-Match"] = ifNoneMatch;
+    }
+
+    const res = await this._get(path, {
+      headers,
+    });
+    const { status } = res;
+
+    if (status === 200) {
+      return [createNode(res.headers), res];
+    }
+
+    if (status === 304) {
+      return [null, res];
+    }
+
+    throw new HTTPError(res);
   }
 
   public async head(path: string, options: RequestInit = {}): Promise<Node> {
@@ -134,19 +163,38 @@ export default class RS implements AsyncIterable<[string, Node]> {
   public async put(
     path: string,
     data: Blob,
+    ifMatch?: string,
     options: RequestInit = {},
-  ): Promise<Node> {
+  ): Promise<[Node, Response]> {
+    const headers = {};
+    if (ifMatch) {
+      headers["If-Match"] = ifMatch;
+    }
+
     const res = await this.fetch(path, {
       method: "PUT",
       body: data,
+      headers,
       ...options,
     });
+    const { status } = res;
 
-    return {
-      ...createNode(res.headers),
-      size: data.size,
-      type: data.type || null,
-    };
+    if (status === 412) {
+      return [null, res];
+    }
+
+    if ([200, 201].includes(status)) {
+      return [
+        {
+          ...createNode(res.headers),
+          size: data.size,
+          type: data.type || null,
+        },
+        res,
+      ];
+    }
+
+    throw new HTTPError(res);
   }
 }
 
@@ -164,7 +212,7 @@ export function buildAuthURL(
   record: any,
   params: Record<string, string> = {},
 ): URL {
-  let authURL =
+  const authURL =
     record.properties["http://tools.ietf.org/html/rfc6749#section-4.2"];
   // let version = record.properties["http://remotestorage.io/spec/version"];
 
@@ -175,7 +223,7 @@ export function buildAuthURL(
   url.searchParams.append("client_id", clientId);
   url.searchParams.append("redirect_uri", redirectUri);
   url.searchParams.append("response_type", "token");
-  url.searchParams.append("scope", "*:rw");
+  url.searchParams.append("scope", params.scope);
 
   return url;
 }

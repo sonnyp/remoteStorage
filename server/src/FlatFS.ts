@@ -58,7 +58,7 @@ export default class FSRemoteStorage extends EventEmitter
 
   public async getFolder(
     path: string,
-    _req: IncomingMessage,
+    req: IncomingMessage,
     res: ServerResponse,
   ): Promise<void> {
     const tree = await this._getTree();
@@ -66,6 +66,11 @@ export default class FSRemoteStorage extends EventEmitter
     const node = getNode(tree, path);
     if (!node) {
       res.statusCode = 404;
+      return;
+    }
+
+    if (req.headers["if-none-match"] === node.ETag) {
+      res.statusCode = 304;
       return;
     }
 
@@ -108,6 +113,25 @@ export default class FSRemoteStorage extends EventEmitter
   ): Promise<void> {
     const tree = await this._getTree();
 
+    const ifNoneMatch = req.headers["if-none-match"];
+    const ifMatch = req.headers["if-match"];
+
+    if (ifNoneMatch) {
+      const currentNode = getNode(tree, path);
+      if (ifNoneMatch === "*" && currentNode) {
+        res.statusCode = 412;
+        return;
+      }
+    }
+
+    if (ifMatch) {
+      const currentNode = getNode(tree, path);
+      if (!currentNode || ifMatch !== currentNode.ETag) {
+        res.statusCode = 412;
+        return;
+      }
+    }
+
     const id = uuid();
     const date = new Date().toUTCString();
 
@@ -147,7 +171,7 @@ export default class FSRemoteStorage extends EventEmitter
 
   public async getDocument(
     path: string,
-    _req: IncomingMessage,
+    req: IncomingMessage,
     res: ServerResponse,
   ): Promise<void> {
     const tree = await this._getTree();
@@ -155,6 +179,11 @@ export default class FSRemoteStorage extends EventEmitter
     const node = getNode(tree, path);
     if (!node) {
       res.statusCode = 404;
+      return;
+    }
+
+    if (req.headers["if-none-match"] === node.ETag) {
+      res.statusCode = 304;
       return;
     }
 
