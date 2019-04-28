@@ -70,13 +70,41 @@ export function handleOptions(
   res.setHeader("Access-Control-Allow-Headers", allowHeaders.join(", "));
 }
 
+export function getAuthorizationToken(req): string | null {
+  const authorization = req.headers["authorization"];
+  if (!authorization || !authorization.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authorization.substr("Bearer ".length);
+  if (!token) {
+    return null;
+  }
+  return token || null;
+}
+
+export function shouldAuthorize(
+  req: IncomingMessage | Http2ServerRequest,
+  path: string,
+): boolean {
+  const { method } = req;
+
+  if (path === "/public/" || path.startsWith("/public/")) {
+    return ["PUT", "DELETE"].includes(method);
+  }
+
+  return true;
+}
+
 interface Options {
   storage: RemoteStorage;
   prefix?: string;
+  authorize(token: string, path: string): Promise<boolean>;
 }
 export function createRequestHandler({
   storage,
   prefix,
+  authorize,
 }: Options): (
   req: IncomingMessage | Http2ServerRequest,
   res: ServerResponse | Http2ServerResponse,
@@ -90,6 +118,28 @@ export function createRequestHandler({
     const { method, url } = req;
     const sufix = url.substr((prefix || "").length);
     const path = decodeURI(parse(sufix).pathname);
+
+    if (method === "OPTIONS") {
+      await handleOptions(path, req, res);
+      res.end();
+      return;
+    }
+
+    if (shouldAuthorize(req, path)) {
+      const token = getAuthorizationToken(req);
+      if (!token) {
+        res.statusCode = 401;
+        res.end();
+        return;
+      }
+
+      const authorized = await authorize(token, path);
+      if (!authorized) {
+        res.statusCode = 401;
+        res.end();
+        return;
+      }
+    }
 
     // FIXME Access-Control-Expose-Headers is not in the spec
     // https://github.com/remotestorage/spec/issues/172
@@ -129,9 +179,6 @@ export function createRequestHandler({
         } else {
           await storage.headDocument(path, req, res);
         }
-        break;
-      case "OPTIONS":
-        await handleOptions(path, req, res);
         break;
       default:
         res.statusCode = 405;

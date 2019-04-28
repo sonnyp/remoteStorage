@@ -1,4 +1,8 @@
-import { createSecureServer } from "http2";
+import {
+  createSecureServer,
+  Http2ServerRequest,
+  Http2ServerResponse,
+} from "http2";
 import { createRequestHandler as createRemoteStorageRequestHandler } from "./RemoteStorage";
 import FSRemoteStorage from "./FlatFS";
 import { join } from "path";
@@ -22,9 +26,14 @@ storage.on("error", err => {
   pino.error(err, "remoteStorage");
 });
 
+const tokens = new Map();
+
 const remoteStorage = createRemoteStorageRequestHandler({
   storage,
   prefix: remoteStoragePrefix,
+  authorize: async (token: string, path: string) => {
+    return !!tokens.get(token);
+  },
 });
 const webFinger = createWebFingerRequestHandler({
   domain,
@@ -44,10 +53,24 @@ async function authorize(req, res): Promise<void> {
   const redirectUri = searchParams.get("redirect_uri");
   const scope = searchParams.get("scope");
 
+  if (!clientId || !redirectUri || !scope) {
+    res.statusCode = 400;
+    res.end();
+    return;
+  }
+
+  const accessDeniedURL = new URL(redirectUri);
+  accessDeniedURL.searchParams.set("error", "access_denied");
+  accessDeniedURL.hash = accessDeniedURL.search.substr(1);
+  accessDeniedURL.search = "";
+
   res.statusCode = 200;
   res.end(`
     <!doctype html>
-    <html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8"/>
+      </head>
       <body>
         <p>
           ${clientId} requiring ${scope}
@@ -66,23 +89,14 @@ async function authorize(req, res): Promise<void> {
 
           <input type="hidden" name="client_id" value="${clientId}"/>
           <input type="hidden" name="redirect_uri" value="${redirectUri}"/>
+          <input type="hidden" name="scope" value="${scope}"/>
 
-          <input type="submit" value="Grant"/>
+          <input type="submit" value="Allow"/>
+          <a href="${accessDeniedURL}"><button>Deny</button></a>
         </form>
       </body>
     </html>
   `);
-
-  // const clientId = searchParams.get("client_id");
-  // const redirectUri = searchParams.get("redirect_uri");
-  // const responseType = searchParams.get("response_type");
-  // const scope = searchParams.get("scope");
-
-  // if (user === "sonny") {
-  //   return true;
-  // } else {
-  //   return false;
-  // }
 }
 async function grant(req, res): Promise<void> {
   const { headers } = req;
@@ -117,10 +131,20 @@ async function grant(req, res): Promise<void> {
   }
 
   // const clientId = searchParams.get("client_id");
+  const scope = searchParams.get("scope");
   const redirectUri = searchParams.get("redirect_uri");
 
+  const token = Math.random()
+    .toString()
+    .substr(2);
+
+  tokens.set(token, {
+    scope,
+    username,
+  });
+
   const redirectURL = new URL(redirectUri);
-  redirectURL.searchParams.set("access_token", "foobar");
+  redirectURL.searchParams.set("access_token", token);
   redirectURL.searchParams.set("token_type", "bearer");
   redirectURL.hash = redirectURL.search.substr(1);
   redirectURL.search = "";
@@ -138,47 +162,52 @@ const OAuth = createOAuthRequestHandler({
   prefix: OAuthPrefix,
 });
 
+function requestHandler(
+  req: Http2ServerRequest,
+  res: Http2ServerResponse,
+): void {
+  httplogger(req, res);
+
+  const { url } = req;
+
+  if (url.startsWith(`${remoteStoragePrefix}/`)) {
+    remoteStorage(req, res).catch(err => {
+      logger.error(err, "RemoteStorage error");
+      res.statusCode = 500;
+      res.end();
+    });
+    return;
+  }
+
+  if (url.startsWith("/.well-known/webfinger")) {
+    webFinger(req, res).catch(err => {
+      logger.error(err, "WebFinger error");
+      res.statusCode = 500;
+      res.end();
+    });
+    return;
+  }
+
+  if (url.startsWith(OAuthPrefix)) {
+    OAuth(req, res).catch(err => {
+      logger.error(err, "OAuth error");
+      res.statusCode = 500;
+      res.end();
+    });
+    return;
+  }
+
+  res.statusCode = 404;
+  res.end();
+}
+
 const server = createSecureServer(
   {
     key: readFileSync(join(__dirname, "../../certs/server-key.pem")),
     cert: readFileSync(join(__dirname, "../../certs/server-cert.pem")),
     allowHTTP1: true,
   },
-  (req, res) => {
-    httplogger(req, res);
-
-    const { url } = req;
-
-    if (url.startsWith(`${remoteStoragePrefix}/`)) {
-      remoteStorage(req, res).catch(err => {
-        logger.error(err, "RemoteStorage error");
-        res.statusCode = 500;
-        res.end();
-      });
-      return;
-    }
-
-    if (url.startsWith("/.well-known/webfinger")) {
-      webFinger(req, res).catch(err => {
-        logger.error(err, "WebFinger error");
-        res.statusCode = 500;
-        res.end();
-      });
-      return;
-    }
-
-    if (url.startsWith(OAuthPrefix)) {
-      OAuth(req, res).catch(err => {
-        logger.error(err, "OAuth error");
-        res.statusCode = 500;
-        res.end();
-      });
-      return;
-    }
-
-    res.statusCode = 404;
-    res.end();
-  },
+  requestHandler,
 );
 
 (async () => {

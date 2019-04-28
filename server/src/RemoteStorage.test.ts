@@ -1,6 +1,7 @@
 import { createRequestHandler, RemoteStorage } from "./RemoteStorage";
 import { IncomingMessage, ServerResponse, createServer } from "http";
-import fetch from "./superfetch";
+import superfetch from "./superfetch";
+import { RequestInit, Response } from "node-fetch";
 
 class MockRemoteStorage implements RemoteStorage {
   public async load(): Promise<void> {}
@@ -37,10 +38,60 @@ class MockRemoteStorage implements RemoteStorage {
   ): Promise<void> {}
 }
 
+async function fetch(
+  app: any,
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  if (!init.headers) {
+    init.headers = {};
+  }
+
+  if (!init.headers["Authorization"]) {
+    init.headers["Authorization"] = "Bearer foobar";
+  }
+
+  return superfetch(app, path, init);
+}
+
+async function mockAuthorize(token: string, path: string): Promise<boolean> {
+  return true;
+}
+
 describe("createRequestHandler", () => {
+  test("responds with 401 if Auhtorization header is missing", async () => {
+    const res = await superfetch(
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
+      "/",
+    );
+    expect(res.status).toBe(401);
+  });
+
+  test("responds with 401 if Auhtorization header is invalid", async () => {
+    const res = await superfetch(
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
+      "/",
+      {
+        headers: {
+          Authorization: "foo",
+        },
+      },
+    );
+    expect(res.status).toBe(401);
+  });
+
   test("sends Access-Control-Allow-Origin response header set to *", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/",
     );
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
@@ -54,6 +105,7 @@ describe("createRequestHandler", () => {
 
     const requestHandler = createRequestHandler({
       storage,
+      authorize: mockAuthorize,
     });
 
     const app = createServer((req, res) => {
@@ -71,7 +123,10 @@ describe("createRequestHandler", () => {
 describe("get folder", () => {
   test("sends Access-Control-Expose-Headers", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/",
       { method: "get" },
     );
@@ -82,7 +137,10 @@ describe("get folder", () => {
 
   test("sends Cache-Control header set to no-cache", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/",
       { method: "get" },
     );
@@ -93,7 +151,10 @@ describe("get folder", () => {
 describe("get file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/foo",
       { method: "get" },
     );
@@ -104,7 +165,10 @@ describe("get file", () => {
 
   test("sends Cache-Control header set to no-cache", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/",
       { method: "get" },
     );
@@ -115,7 +179,10 @@ describe("get file", () => {
 describe("put folder", () => {
   test("responds with 405", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/foo/",
       {
         method: "put",
@@ -128,7 +195,10 @@ describe("put folder", () => {
 describe("put file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/foo",
       { method: "put" },
     );
@@ -139,7 +209,10 @@ describe("put file", () => {
 describe("delete folder", () => {
   test("responds with 405", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/foo/",
       {
         method: "delete",
@@ -152,7 +225,10 @@ describe("delete folder", () => {
 describe("delete file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/foo",
       { method: "delete" },
     );
@@ -163,7 +239,10 @@ describe("delete file", () => {
 describe("head folder", () => {
   test("sends Access-Control-Expose-Headers", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/",
       { method: "head" },
     );
@@ -176,7 +255,10 @@ describe("head folder", () => {
 describe("head file", () => {
   test("sends Access-Control-Expose-Headers", async () => {
     const res = await fetch(
-      createRequestHandler({ storage: new MockRemoteStorage() }),
+      createRequestHandler({
+        storage: new MockRemoteStorage(),
+        authorize: mockAuthorize,
+      }),
       "/foo",
       { method: "head" },
     );
@@ -190,7 +272,10 @@ describe("OPTIONS", () => {
   describe("file", () => {
     test("sends Access-Control-Allow-Methods", async () => {
       const req = await fetch(
-        createRequestHandler({ storage: new MockRemoteStorage() }),
+        createRequestHandler({
+          storage: new MockRemoteStorage(),
+          authorize: mockAuthorize,
+        }),
         "/foo",
         { method: "OPTIONS" },
       );
@@ -201,7 +286,10 @@ describe("OPTIONS", () => {
 
     test("sends Access-Control-Allow-Headers", async () => {
       const req = await fetch(
-        createRequestHandler({ storage: new MockRemoteStorage() }),
+        createRequestHandler({
+          storage: new MockRemoteStorage(),
+          authorize: mockAuthorize,
+        }),
         "/foo",
         { method: "OPTIONS" },
       );
@@ -212,7 +300,10 @@ describe("OPTIONS", () => {
 
     test("sends Access-Control-Max-Age", async () => {
       const req = await fetch(
-        createRequestHandler({ storage: new MockRemoteStorage() }),
+        createRequestHandler({
+          storage: new MockRemoteStorage(),
+          authorize: mockAuthorize,
+        }),
         "/foo",
         { method: "OPTIONS" },
       );
@@ -223,7 +314,10 @@ describe("OPTIONS", () => {
   describe("folder", () => {
     test("sends Access-Control-Allow-Methods", async () => {
       const req = await fetch(
-        createRequestHandler({ storage: new MockRemoteStorage() }),
+        createRequestHandler({
+          storage: new MockRemoteStorage(),
+          authorize: mockAuthorize,
+        }),
         "/foo/bar/",
         { method: "OPTIONS" },
       );
@@ -234,7 +328,10 @@ describe("OPTIONS", () => {
 
     test("sends Access-Control-Allow-Headers", async () => {
       const req = await fetch(
-        createRequestHandler({ storage: new MockRemoteStorage() }),
+        createRequestHandler({
+          storage: new MockRemoteStorage(),
+          authorize: mockAuthorize,
+        }),
         "/foo/bar/",
         { method: "OPTIONS" },
       );
@@ -245,7 +342,10 @@ describe("OPTIONS", () => {
 
     test("sends Access-Control-Max-Age", async () => {
       const req = await fetch(
-        createRequestHandler({ storage: new MockRemoteStorage() }),
+        createRequestHandler({
+          storage: new MockRemoteStorage(),
+          authorize: mockAuthorize,
+        }),
         "/foo/bar/",
         { method: "OPTIONS" },
       );

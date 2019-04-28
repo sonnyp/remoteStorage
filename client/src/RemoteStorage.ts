@@ -62,7 +62,6 @@ export default class RS implements AsyncIterable<[string, Node]> {
     if (!options.headers) {
       options.headers = {};
     }
-    // @ts-ignore
     options.headers["Authorization"] = `Bearer ${this.token}`;
 
     const response = await fetch(this.url + path, {
