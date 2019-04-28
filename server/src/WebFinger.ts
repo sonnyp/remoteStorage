@@ -16,19 +16,19 @@ export function createRequestHandler({
     res: ServerResponse,
   ): Promise<void> {
     const { method } = req;
-    const url = new URL(req.url, `https://${domain}`);
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    const resource = url.searchParams.get("resource");
-    if (!resource) {
-      res.statusCode = 400;
+    if (method !== "GET") {
+      res.statusCode = 405;
       res.end();
       return;
     }
 
-    if (method !== "GET") {
-      res.statusCode = 405;
+    const url = new URL(req.url, `https://${domain}`);
+    const resource = url.searchParams.get("resource");
+    if (!resource) {
+      res.statusCode = 400;
       res.end();
       return;
     }
@@ -41,8 +41,7 @@ export function createRequestHandler({
         links: [
           {
             href: `https://${domain}/storage`,
-            rel: "http://tools.ietf.org/id/draft-dejong-remotestorag\
-e",
+            rel: "http://tools.ietf.org/id/draft-dejong-remotestorage",
             properties: {
               "http://remotestorage.io/spec/version":
                 "draft-dejong-remotestorage-12",
