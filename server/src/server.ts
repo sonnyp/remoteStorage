@@ -15,18 +15,18 @@ import { createRequestHandler as createOAuthRequestHandler } from "./OAuth";
 const logger = pino();
 const httplogger = pinoHttp({ logger });
 
-const domain = "foobar";
+const domain = "localhost";
 const remoteStoragePrefix = "/storage";
 const OAuthPrefix = "/oauth";
 
 const storage = new FSRemoteStorage({
   root: join(__dirname, "..", "..", "storage"),
 });
-storage.on("error", err => {
+storage.on("error", (err) => {
   pino.error(err, "remoteStorage");
 });
 
-const tokens = new Map();
+const tokens = new Map([["foobar", { scope: "bar", username: "sonny" }]]);
 
 const remoteStorage = createRemoteStorageRequestHandler({
   storage,
@@ -107,9 +107,9 @@ async function grant(req, res): Promise<void> {
   }
 
   async function readStream(req): Promise<string> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       let body = "";
-      req.on("data", chunk => {
+      req.on("data", (chunk) => {
         body += chunk.toString();
       });
       req.on("end", () => {
@@ -134,9 +134,7 @@ async function grant(req, res): Promise<void> {
   const scope = searchParams.get("scope");
   const redirectUri = searchParams.get("redirect_uri");
 
-  const token = Math.random()
-    .toString()
-    .substr(2);
+  const token = Math.random().toString().substr(2);
 
   tokens.set(token, {
     scope,
@@ -171,7 +169,7 @@ function requestHandler(
   const { url } = req;
 
   if (url.startsWith(`${remoteStoragePrefix}/`)) {
-    remoteStorage(req, res).catch(err => {
+    remoteStorage(req, res).catch((err) => {
       logger.error(err, "RemoteStorage error");
       res.statusCode = 500;
       res.end();
@@ -180,7 +178,7 @@ function requestHandler(
   }
 
   if (url.startsWith("/.well-known/webfinger")) {
-    webFinger(req, res).catch(err => {
+    webFinger(req, res).catch((err) => {
       logger.error(err, "WebFinger error");
       res.statusCode = 500;
       res.end();
@@ -189,7 +187,7 @@ function requestHandler(
   }
 
   if (url.startsWith(OAuthPrefix)) {
-    OAuth(req, res).catch(err => {
+    OAuth(req, res).catch((err) => {
       logger.error(err, "OAuth error");
       res.statusCode = 500;
       res.end();

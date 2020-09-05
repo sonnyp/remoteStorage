@@ -30,6 +30,6 @@ describe("getDomain", () => {
   test("invalid uri", () => {
     expect(() => {
       getDomain("foo");
-    }).toThrowError(new TypeError("Invalid URL"));
+    }).toThrowError(new TypeError("Invalid URL: foo"));
   });
 });

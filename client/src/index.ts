@@ -6,7 +6,7 @@ import RemoteStorage, {
 import { lookup } from "./WebFinger";
 import { StorageArea } from "kv-storage-polyfill";
 
-const domain = "foobar";
+const domain = "localhost";
 
 // import {
 //   createStringStreamFromBlob,
@@ -119,7 +119,7 @@ if (syncButton) {
 
 const form = document.querySelector("form");
 if (form) {
-  form.addEventListener("submit", async evt => {
+  form.addEventListener("submit", async (evt) => {
     evt.preventDefault();
 
     const file = form.querySelector("input[type=file]") as HTMLInputElement;

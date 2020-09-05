@@ -23,13 +23,13 @@ export default async function superfetch(
   app = typeof app === "function" ? createServer(app) : app;
 
   if (!app.listening) {
-    await new Promise(resolve => app.listen(0, resolve));
+    await new Promise((resolve) => app.listen(0, resolve));
   }
 
   const url = serverAddress(app, path);
   const req = await fetch(url, init);
 
-  await new Promise(resolve => app.close(resolve));
+  await new Promise((resolve) => app.close(resolve));
 
   return req;
 }

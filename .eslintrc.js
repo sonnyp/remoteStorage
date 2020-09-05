@@ -21,5 +21,7 @@ module.exports = {
   rules: {
     "prettier/prettier": "error",
     "no-console": 0,
+    "@typescript-eslint/no-empty-function": 0,
+    "@typescript-eslint/no-inferrable-types": 0,
   },
 };

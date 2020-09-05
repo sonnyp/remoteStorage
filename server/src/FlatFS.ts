@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from "http";
 import fs from "fs";
 import { join } from "path";
 import { promisify } from "util";
-import uuid from "uuid/v4";
+import { v4 as uuid } from "uuid";
 import { setNode, getNode, removeNode, Tree, createTree } from "./tree";
 import stream from "stream";
 import { EventEmitter } from "events";
@@ -19,7 +19,8 @@ interface FSRemoteStorageInit {
   root: string;
 }
 
-export default class FSRemoteStorage extends EventEmitter
+export default class FSRemoteStorage
+  extends EventEmitter
   implements RemoteStorage {
   public root: string;
 
@@ -189,7 +190,7 @@ export default class FSRemoteStorage extends EventEmitter
 
     res.statusCode = 200;
     ["Content-Length", "Last-Modified", "ETag", "Content-Type"].forEach(
-      header => {
+      (header) => {
         const value = node[header];
         if (value) res.setHeader(header, value);
       },
@@ -220,7 +221,7 @@ export default class FSRemoteStorage extends EventEmitter
 
     res.statusCode = 200;
 
-    unlink(join(this.root, "files", node.id)).catch(err => {
+    unlink(join(this.root, "files", node.id)).catch((err) => {
       this.emit("error", err);
     });
   }
@@ -240,7 +241,7 @@ export default class FSRemoteStorage extends EventEmitter
 
     res.statusCode = 200;
     ["Content-Length", "Last-Modified", "ETag", "Content-Type"].forEach(
-      header => {
+      (header) => {
         const value = node[header];
         if (value) res.setHeader(header, value);
       },

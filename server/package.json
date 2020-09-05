@@ -4,17 +4,17 @@
     "dev": "nodemon"
   },
   "devDependencies": {
-    "@types/uuid": "^3.4.4",
-    "nodemon": "^1.18.10",
-    "pino-pretty": "^2.5.0",
-    "ts-node": "^8.0.3"
+    "@types/uuid": "^8.3.0",
+    "nodemon": "^2.0.4",
+    "pino-pretty": "^4.2.0",
+    "ts-node": "^9.0.0"
   },
   "dependencies": {
-    "@types/node-fetch": "^2.1.7",
-    "crc32-stream": "^2.0.0",
-    "node-fetch": "^2.3.0",
-    "pino": "^5.12.0",
-    "pino-http": "^4.1.0",
-    "uuid": "^3.3.2"
+    "@types/node-fetch": "^2.5.7",
+    "crc32-stream": "^4.0.0",
+    "node-fetch": "^2.6.1",
+    "pino": "^6.5.1",
+    "pino-http": "^5.2.0",
+    "uuid": "^8.3.0"
   }
 }

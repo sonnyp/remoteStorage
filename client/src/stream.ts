@@ -77,39 +77,3 @@ export function createStringStreamFromBlob(
 ): ReadableStream<string> {
   return createStreamFromBlob(blob, init, readAsString);
 }
-
-export function createAsyncIteratorFromStream(
-  stream: ReadableStream,
-): AsyncIterableIterator<any> {
-  const reader = stream.getReader();
-  return {
-    next() {
-      return reader.read();
-    },
-    async return() {
-      reader.releaseLock();
-      // Per specification value can be ommitted if done = true
-      // TypeScript requires value in IteratorResult
-      // See https://github.com/Microsoft/TypeScript/issues/8938
-      return { done: true, value: undefined };
-    },
-    [Symbol.asyncIterator]() {
-      return this;
-    },
-  };
-}
-// or
-// export async function* createAsyncIteratorFromStream(
-//   stream: ReadableStream,
-// ): AsyncIterableIterator<any> {
-//   const reader = stream.getReader();
-//   try {
-//     while (true) {
-//       const { done, value } = await reader.read();
-//       if (done) return;
-//       yield value;
-//     }
-//   } finally {
-//     reader.releaseLock();
-//   }
-// }

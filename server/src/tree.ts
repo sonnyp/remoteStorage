@@ -1,11 +1,5 @@
 export function etag(): string {
-  return (
-    '"' +
-    Math.random()
-      .toString()
-      .substr(2) +
-    '"'
-  );
+  return '"' + Math.random().toString().substr(2) + '"';
 }
 
 export interface Node {
@@ -82,7 +76,7 @@ export function removeNode(tree: Tree, path: string): boolean {
 
     const branchName = branches[i];
     if (i === branches.length) {
-      branch.children = branch.children.filter(node => node !== name);
+      branch.children = branch.children.filter((node) => node !== name);
     }
 
     cursor += branchName + "/";

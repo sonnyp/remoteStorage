@@ -70,7 +70,7 @@ describe("setNode", () => {
 
     expect(setNode(tree, "/foo/bar", foo)).toBe(true);
 
-    let folderEtag = tree["/foo/"].ETag;
+    const folderEtag = tree["/foo/"].ETag;
 
     const bar = {
       ETag: etag(),

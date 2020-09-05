@@ -5,17 +5,17 @@
     "test": "jest && npm run lint"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.11",
-    "@typescript-eslint/eslint-plugin": "^1.7.0",
-    "@typescript-eslint/parser": "^1.7.0",
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^4.2.0",
-    "eslint-plugin-prettier": "^3.0.1",
-    "husky": "^2.1.0",
-    "jest": "^24.7.1",
-    "prettier": "^1.17.0",
-    "pretty-quick": "^1.10.0",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.4.5"
+    "@types/jest": "^26.0.13",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
+    "eslint": "^7.8.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "husky": "^4.2.5",
+    "jest": "^26.4.2",
+    "prettier": "^2.1.1",
+    "pretty-quick": "^3.0.0",
+    "ts-jest": "^26.3.0",
+    "typescript": "^4.0.2"
   }
 }

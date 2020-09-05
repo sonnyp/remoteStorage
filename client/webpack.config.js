@@ -37,5 +37,9 @@ module.exports = {
     filename: "bundle.js",
   },
 
-  plugins: [new CopyPlugin([{ from: "index.html" }])],
+  plugins: [
+    new CopyPlugin({
+      patterns: [{ from: "index.html" }],
+    }),
+  ],
 };

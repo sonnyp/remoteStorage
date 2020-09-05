@@ -97,7 +97,7 @@ describe("createRequestHandler", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 
-  test("rejects if an operation throws or rejects", cb => {
+  test("rejects if an operation throws or rejects", (cb) => {
     const storage = new MockRemoteStorage();
     const error = new Error("foobar");
 
@@ -109,9 +109,7 @@ describe("createRequestHandler", () => {
     });
 
     const app = createServer((req, res) => {
-      expect(requestHandler(req, res))
-        .rejects.toBe(error)
-        .then(cb);
+      expect(requestHandler(req, res)).rejects.toBe(error).then(cb);
     });
 
     fetch(app, "/foo/bar", {
