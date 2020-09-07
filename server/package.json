@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/node-fetch": "^2.5.7",
     "crc32-stream": "^4.0.0",
+    "dotenv": "^8.2.0",
     "node-fetch": "^2.6.1",
     "pino": "^6.5.1",
     "pino-http": "^5.2.0",

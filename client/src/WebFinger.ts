@@ -3,7 +3,7 @@ import HTTPError from "./HTTPError";
 export function getDomain(resource: URL | string): string {
   let domain;
 
-  const url = typeof resource === "string" ? new URL(resource) : resource;
+  const url = new URL(resource.toString());
 
   if (url.protocol === "acct:") {
     const idx = resource.toString().lastIndexOf("@");
@@ -17,18 +17,16 @@ export function getDomain(resource: URL | string): string {
 
 export async function lookup(
   resource: URL | string,
-  options: RequestInit = {},
+  url?: URL | string,
 ): Promise<any> {
   const domain = getDomain(resource);
 
-  const url = new URL(`https://${domain}/.well-known/webfinger`);
+  url = new URL(url?.toString() || `https://${domain}/.well-known/webfinger`);
   url.searchParams.append("resource", resource.toString());
 
   const response = await fetch(url.toString(), {
-    ...options,
     headers: {
       Accept: "application/jrd+json",
-      ...options.headers,
     },
   });
 

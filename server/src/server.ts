@@ -12,10 +12,11 @@ import { createRequestHandler as createWebFingerRequestHandler } from "./WebFing
 import { readFileSync } from "fs";
 import { createRequestHandler as createOAuthRequestHandler } from "./OAuth";
 
+const { DOMAIN, PORT, KEY, CERT } = process.env;
+
 const logger = pino();
 const httplogger = pinoHttp({ logger });
 
-const domain = "localhost";
 const remoteStoragePrefix = "/storage";
 const OAuthPrefix = "/oauth";
 
@@ -26,7 +27,7 @@ storage.on("error", (err) => {
   pino.error(err, "remoteStorage");
 });
 
-const tokens = new Map([["foobar", { scope: "bar", username: "sonny" }]]);
+const tokens = new Map([["foobar", { scope: "*", username: "sonny" }]]);
 
 const remoteStorage = createRemoteStorageRequestHandler({
   storage,
@@ -35,12 +36,25 @@ const remoteStorage = createRemoteStorageRequestHandler({
     return !!tokens.get(token);
   },
 });
-const webFinger = createWebFingerRequestHandler({
-  domain,
+const webFinger = createWebFingerRequestHandler(async (resource) => {
+  return {
+    subject: resource,
+    links: [
+      {
+        href: `https://${DOMAIN}:${PORT}/storage`,
+        rel: "http://tools.ietf.org/id/draft-dejong-remotestorage",
+        properties: {
+          "http://remotestorage.io/spec/version":
+            "draft-dejong-remotestorage-12",
+          "http://tools.ietf.org/html/rfc6749#section-4.2": `https://${DOMAIN}:${PORT}/oauth/sonny`,
+        },
+      },
+    ],
+  };
 });
 
 async function authorize(req, res): Promise<void> {
-  const { searchParams } = new URL(req.url, `http://${domain}`);
+  const { searchParams } = new URL(req.url, `http://${DOMAIN}`);
 
   const responseType = searchParams.get("response_type");
   if (responseType !== "token") {
@@ -153,7 +167,7 @@ async function grant(req, res): Promise<void> {
 }
 
 const OAuth = createOAuthRequestHandler({
-  domain,
+  domain: DOMAIN,
   // authenticate,
   authorize,
   grant,
@@ -201,8 +215,8 @@ function requestHandler(
 
 const server = createSecureServer(
   {
-    key: readFileSync(join(__dirname, "../../certs/server-key.pem")),
-    cert: readFileSync(join(__dirname, "../../certs/server-cert.pem")),
+    key: readFileSync(join(__dirname, KEY)),
+    cert: readFileSync(join(__dirname, CERT)),
     allowHTTP1: true,
   },
   requestHandler,
@@ -211,8 +225,8 @@ const server = createSecureServer(
 (async () => {
   await storage.load();
 
-  server.listen(443, () => {
-    console.log(`https://${domain}:443/`);
+  server.listen(PORT, () => {
+    console.log(`https://${DOMAIN}:${PORT}/`);
   });
 })();
 

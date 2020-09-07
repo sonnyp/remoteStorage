@@ -1,12 +1,14 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { Http2ServerRequest, Http2ServerResponse } from "http2";
+import url from "url";
+import querystring from "querystring";
 
 interface Options {
   domain: string;
 }
 
 export function createRequestHandler({
-  domain,
+  fn,
 }: Options): (
   req: IncomingMessage | Http2ServerRequest,
   res: ServerResponse | Http2ServerResponse,
@@ -25,9 +27,18 @@ export function createRequestHandler({
       return;
     }
 
-    const url = new URL(req.url, `https://${domain}`);
-    const resource = url.searchParams.get("resource");
+    const parsed = url.parse(req.url);
+    const query = querystring.parse(parsed.query);
+
+    const resource = query.resource;
     if (!resource) {
+      res.statusCode = 400;
+      res.end();
+      return;
+    }
+
+    const result = await fn(resource);
+    if (!result) {
       res.statusCode = 400;
       res.end();
       return;
@@ -35,21 +46,6 @@ export function createRequestHandler({
 
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/jrd+json");
-    res.end(
-      JSON.stringify({
-        subject: resource,
-        links: [
-          {
-            href: `https://${domain}/storage`,
-            rel: "http://tools.ietf.org/id/draft-dejong-remotestorage",
-            properties: {
-              "http://remotestorage.io/spec/version":
-                "draft-dejong-remotestorage-12",
-              "http://tools.ietf.org/html/rfc6749#section-4.2": `https://${domain}/oauth/sonny`,
-            },
-          },
-        ],
-      }),
-    );
+    res.end(JSON.stringify(result));
   };
 }

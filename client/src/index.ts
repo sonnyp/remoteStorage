@@ -20,15 +20,20 @@ const resource = `acct:sonny@${domain}`;
 // prod
 // const resource = "acct:sonny@5apps.com";
 
+// dev
+const lookupUrl = `https://${domain}:4646/.well-known/webfinger`;
+// prod
+// const url = undefined
+
 async function connect(): Promise<void> {
-  const webfinger = await lookup(resource);
+  const webfinger = await lookup(resource, lookupUrl);
   const record = getRemoteStorageRecord(webfinger);
-  const url = buildAuthURL(record);
-  window.location.href = url.toString();
+  const authenticationURL = buildAuthURL(record);
+  window.location.href = authenticationURL.toString();
 }
 
 async function connected(token: string): Promise<void> {
-  const webfinger = await lookup(resource);
+  const webfinger = await lookup(resource, lookupUrl);
   const record = getRemoteStorageRecord(webfinger);
   const rs = new RemoteStorage(record.href, token);
   console.log(rs, token);
@@ -53,9 +58,9 @@ async function connected(token: string): Promise<void> {
   //   // console.log(await reader.read())
   // });
 
-  for await (const node of rs) {
-    console.log(node);
-  }
+  // for await (const node of rs) {
+  //   console.log(node);
+  // }
 }
 
 async function main(): Promise<void> {
@@ -91,7 +96,10 @@ const listButton = document.querySelector("button#list");
 if (listButton) {
   listButton.addEventListener("click", async () => {
     for await (const [path, node] of rs) {
-      console.log(path, node);
+      console.log(node);
+      const el = document.createElement("p");
+      el.textContent = path;
+      document.body.append(el);
     }
   });
 }
