@@ -1,13 +1,49 @@
 import React, { useState, useContext } from "react";
 import { StackScreenProps } from "@react-navigation/stack";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Input, Button } from "react-native-elements";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Platform,
+  Alert,
+} from "react-native";
+import { Input, Button, Divider } from "react-native-elements";
+import AsyncStorage from "@react-native-community/async-storage";
 
 import { RootStackParamList } from "../types";
 
 import AccountContext from "../AccountContext";
+import { lookup } from "client/dist/WebFinger";
+import { buildAuthURL, getRemoteStorageLink } from "client/dist/RemoteStorage";
 
-function onSubmit({ resource, setLoading, setAccount, setErrorMessage }) {
+async function connect({ lookupUrl, resource }) {
+  const record = await lookup(`acct:${resource}`, lookupUrl);
+  const link = getRemoteStorageLink(record);
+
+  console.log(link);
+
+  await AsyncStorage.setItem("remoteStorage:link", JSON.stringify(link));
+
+  if (Platform.OS === "web") {
+  } else {
+    Alert.alert("Oops", "Unsupported platform");
+    return;
+  }
+
+  const authorizationURL = buildAuthURL(link);
+  window.location.href = authorizationURL.toString();
+
+  return { link };
+}
+
+async function onSubmit({
+  resource,
+  setLoading,
+  setAccount,
+  setErrorMessage,
+  lookupUrl,
+}) {
   if (!resource) {
     setErrorMessage("Please enter your account.");
     return;
@@ -16,10 +52,14 @@ function onSubmit({ resource, setLoading, setAccount, setErrorMessage }) {
   setLoading(true);
 
   try {
+    const { link } = await connect({ lookupUrl, resource });
+
     setAccount({
-      connected: true,
+      // connected: true,
+      link,
     });
   } catch (err) {
+    console.log(err);
     setAccount({
       connected: false,
     });
@@ -28,10 +68,16 @@ function onSubmit({ resource, setLoading, setAccount, setErrorMessage }) {
   }
 }
 
+const domain = "localhost";
+const dev = true;
+
 export default function ConnectScreen({
   navigation,
 }: StackScreenProps<RootStackParamList, "Root">) {
-  const [resource, setResource] = useState("");
+  const [resource, setResource] = useState(dev ? `sonny@${domain}` : "");
+  const [lookupUrl, setLookupUrl] = useState(
+    dev ? `https://${domain}:4646/.well-known/webfinger` : "",
+  );
   const [loading, setLoading] = useState(false);
   const [account, setAccount] = useContext(AccountContext);
   const [errorMessage, setErrorMessage] = useState("");
@@ -51,11 +97,26 @@ export default function ConnectScreen({
         errorMessage={errorMessage}
       />
 
+      <Divider style={{ backgroundColor: "red", width: "100%" }} />
+
+      <Input
+        value={lookupUrl}
+        onChangeText={setLookupUrl}
+        placeholder="WebFinger URL"
+        errorMessage={errorMessage}
+      />
+
       <Button
         title="Connect"
         loading={loading}
         onPress={() =>
-          onSubmit({ resource, setLoading, setErrorMessage, setAccount })
+          onSubmit({
+            resource,
+            setLoading,
+            setErrorMessage,
+            setAccount,
+            lookupUrl,
+          })
         }
       />
       {/* <TouchableOpacity

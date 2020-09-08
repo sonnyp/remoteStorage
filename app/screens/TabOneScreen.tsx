@@ -1,10 +1,23 @@
-import * as React from "react";
+import React, { useContext } from "react";
 import { StyleSheet } from "react-native";
 
 import EditScreenInfo from "../components/EditScreenInfo";
 import { Text, View } from "../components/Themed";
 
+import AccountContext from "../AccountContext";
+
+import RemoteStorage from "client/dist/RemoteStorage";
+
 export default function TabOneScreen() {
+  const [account, setAccount] = useContext(AccountContext);
+  console.log(account);
+
+  const rs = new RemoteStorage(account.link.href, account.token);
+
+  rs.get("/").then(([node]) => {
+    console.log(node);
+  });
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab One</Text>

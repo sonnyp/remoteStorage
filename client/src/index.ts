@@ -15,8 +15,6 @@ const domain = "localhost";
 //   createAsyncIteratorFromStream,
 // } from "./stream.js";
 
-// const token = "5ad04ac40a6a091ca4bafa8019deae78";
-
 // dev
 const resource = `acct:sonny@${domain}`;
 // prod
@@ -30,8 +28,8 @@ const lookupUrl = `https://${domain}:4646/.well-known/webfinger`;
 let rs;
 
 async function connect(): Promise<void> {
-  const webfinger = await lookup(resource, lookupUrl);
-  const link = getRemoteStorageLink(webfinger);
+  const record = await lookup(resource, lookupUrl);
+  const link = getRemoteStorageLink(record);
   localStorage.setItem("remoteStorage:link", JSON.stringify(link));
   const authenticationURL = buildAuthURL(link);
   window.location.href = authenticationURL.toString();

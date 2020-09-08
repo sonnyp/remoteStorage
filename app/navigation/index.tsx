@@ -38,7 +38,6 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
   const [account, setAccount] = useContext(AccountContext);
-  console.log(account);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
