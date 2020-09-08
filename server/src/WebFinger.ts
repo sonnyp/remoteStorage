@@ -3,13 +3,9 @@ import { Http2ServerRequest, Http2ServerResponse } from "http2";
 import url from "url";
 import querystring from "querystring";
 
-interface Options {
-  domain: string;
-}
-
-export function createRequestHandler({
-  fn,
-}: Options): (
+export function createRequestHandler(
+  fn: (string) => Promise<any>,
+): (
   req: IncomingMessage | Http2ServerRequest,
   res: ServerResponse | Http2ServerResponse,
 ) => Promise<void> {

@@ -27,7 +27,7 @@ storage.on("error", (err) => {
   pino.error(err, "remoteStorage");
 });
 
-const tokens = new Map([["foobar", { scope: "*", username: "sonny" }]]);
+const tokens = new Map();
 
 const remoteStorage = createRemoteStorageRequestHandler({
   storage,
@@ -36,7 +36,8 @@ const remoteStorage = createRemoteStorageRequestHandler({
     return !!tokens.get(token);
   },
 });
-const webFinger = createWebFingerRequestHandler(async (resource) => {
+
+const webFinger = createWebFingerRequestHandler(async (resource: string) => {
   return {
     subject: resource,
     links: [
@@ -45,7 +46,7 @@ const webFinger = createWebFingerRequestHandler(async (resource) => {
         rel: "http://tools.ietf.org/id/draft-dejong-remotestorage",
         properties: {
           "http://remotestorage.io/spec/version":
-            "draft-dejong-remotestorage-12",
+            "draft-dejong-remotestorage-15",
           "http://tools.ietf.org/html/rfc6749#section-4.2": `https://${DOMAIN}:${PORT}/oauth/sonny`,
         },
       },
@@ -134,6 +135,18 @@ async function grant(req, res): Promise<void> {
 
   const body = await readStream(req);
   const searchParams = new URLSearchParams(body);
+  const redirect_uri = searchParams.get("redirect_uri");
+  const redirectURL = new URL(redirect_uri);
+
+  const scope = searchParams.get("scope");
+  if (!scope) {
+    res.statusCode = 302;
+    // https://tools.ietf.org/html/rfc6749#section-4.1.2.1
+    redirectURL.searchParams.set("error", "invalid_request");
+    redirectURL.searchParams.set("error_description", "missing scope");
+    res.setHeader("Location", redirectURL.toString());
+    res.end();
+  }
 
   const username = searchParams.get("username");
   const password = searchParams.get("password");
@@ -145,8 +158,6 @@ async function grant(req, res): Promise<void> {
   }
 
   // const clientId = searchParams.get("client_id");
-  const scope = searchParams.get("scope");
-  const redirectUri = searchParams.get("redirect_uri");
 
   const token = Math.random().toString().substr(2);
 
@@ -155,7 +166,6 @@ async function grant(req, res): Promise<void> {
     username,
   });
 
-  const redirectURL = new URL(redirectUri);
   redirectURL.searchParams.set("access_token", token);
   redirectURL.searchParams.set("token_type", "bearer");
   redirectURL.hash = redirectURL.search.substr(1);

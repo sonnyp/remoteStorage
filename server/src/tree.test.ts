@@ -5,8 +5,12 @@ describe("createTree", () => {
     const tree = createTree();
     expect(tree).toEqual({
       "/": {
-        children: [],
+        children: ["public/"],
         ETag: tree["/"].ETag,
+      },
+      "/public/": {
+        children: [],
+        ETag: tree["/public/"].ETag,
       },
     });
   });

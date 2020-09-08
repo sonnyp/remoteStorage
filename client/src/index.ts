@@ -1,10 +1,12 @@
 import RemoteStorage, {
-  getRemoteStorageRecord,
+  getRemoteStorageLink,
   buildAuthURL,
 } from "./RemoteStorage";
 // import { Storage } from "./storage.js";
 import { lookup } from "./WebFinger";
 import { StorageArea } from "kv-storage-polyfill";
+
+const storage = new StorageArea("remoteStorage");
 
 const domain = "localhost";
 
@@ -25,18 +27,25 @@ const lookupUrl = `https://${domain}:4646/.well-known/webfinger`;
 // prod
 // const url = undefined
 
+let rs;
+
 async function connect(): Promise<void> {
   const webfinger = await lookup(resource, lookupUrl);
-  const record = getRemoteStorageRecord(webfinger);
-  const authenticationURL = buildAuthURL(record);
+  const link = getRemoteStorageLink(webfinger);
+  localStorage.setItem("remoteStorage:link", JSON.stringify(link));
+  const authenticationURL = buildAuthURL(link);
   window.location.href = authenticationURL.toString();
 }
 
-async function connected(token: string): Promise<void> {
-  const webfinger = await lookup(resource, lookupUrl);
-  const record = getRemoteStorageRecord(webfinger);
-  const rs = new RemoteStorage(record.href, token);
-  console.log(rs, token);
+async function connected({ token, link, resource }): Promise<void> {
+  // const webfinger = await lookup(resource, lookupUrl);
+  // const record = getRemoteStorageRecord(webfinger);
+  rs = new RemoteStorage(link.href, token);
+
+  rs.onUnauthorized = (err) => {
+    localStorage.removeItem("remoteStorage:token");
+    connect().catch(console.error);
+  };
 
   // const input = document.querySelector("input");
   // input.addEventListener("change", async () => {
@@ -63,30 +72,54 @@ async function connected(token: string): Promise<void> {
   // }
 }
 
+async function onCallbackToken(token) {
+  localStorage.setItem("remoteStorage:token", token);
+
+  return {
+    link: JSON.parse(localStorage.getItem("remoteStorage:link") || "null"),
+    resource: localStorage.getItem("remoteStorage:resource"),
+    token,
+  };
+}
+
+async function getAccount() {
+  return {
+    link: JSON.parse(localStorage.getItem("remoteStorage:link") || "null"),
+    resource: localStorage.getItem("remoteStorage:resource"),
+    token: localStorage.getItem("remoteStorage:token"),
+  };
+}
+
+async function remoteAccount() {
+  localStorage.removeItem("remoteStorage:link");
+  localStorage.removeItem("remoteStorage:resource");
+  localStorage.removeItem("remoteStorage:token");
+}
+
 async function main(): Promise<void> {
   const url = new URL(window.location.href);
-  // Use url searchParams to parse hash
+  // TODO: Use url searchParams to parse hash
   url.search = url.hash.substr(1);
-  const token = url.searchParams.get("access_token");
+  const access_token = url.searchParams.get("access_token");
 
-  if (token) {
-    localStorage.setItem("token", token);
+  if (access_token) {
+    const account = await onCallbackToken(access_token);
     // Remove hash from current url
     history.replaceState({}, "", url.pathname);
-    await connected(token);
-  } else {
-    const token = localStorage.getItem("token");
-    if (token) {
-      await connected(token);
-    } else {
-      await connect();
-    }
+    await connected(account);
+    return;
   }
+
+  const account = await getAccount();
+  if (!account?.link || !account?.token) {
+    await connect();
+    return;
+  }
+
+  await connected(account);
 }
 
 main();
-
-const rs = new RemoteStorage("https://localhost/storage", "foobar");
 
 (async () => {
   // console.log(await rs.get("/hello/"));
@@ -95,17 +128,20 @@ const rs = new RemoteStorage("https://localhost/storage", "foobar");
 const listButton = document.querySelector("button#list");
 if (listButton) {
   listButton.addEventListener("click", async () => {
-    for await (const [path, node] of rs) {
-      console.log(node);
-      const el = document.createElement("p");
-      el.textContent = path;
-      document.body.append(el);
+    try {
+      for await (const [path, node] of rs) {
+        console.log(node);
+        const el = document.createElement("p");
+        el.textContent = path;
+        document.body.append(el);
+      }
+    } catch (err) {
+      console.error(err);
     }
   });
 }
 
 async function sync(): Promise<void> {
-  const storage = new StorageArea("remoteStorage");
   for await (const [path, node] of rs) {
     console.log(path);
     const local = await storage.get(path);

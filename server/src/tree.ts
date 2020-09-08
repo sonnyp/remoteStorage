@@ -13,6 +13,10 @@ export type Tree = Record<string, Node>;
 export function createTree(): Tree {
   return {
     "/": {
+      children: ["public/"],
+      ETag: etag(),
+    },
+    "/public/": {
       children: [],
       ETag: etag(),
     },

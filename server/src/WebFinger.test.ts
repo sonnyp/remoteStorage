@@ -58,11 +58,10 @@ describe("WebFinger", () => {
       links: [
         {
           href: `https://${domain}/storage`,
-          rel: "http://tools.ietf.org/id/draft-dejong-remotestorag\
-e",
+          rel: "http://tools.ietf.org/id/draft-dejong-remotestorage",
           properties: {
             "http://remotestorage.io/spec/version":
-              "draft-dejong-remotestorage-12",
+              "draft-dejong-remotestorage-15",
             "http://tools.ietf.org/html/rfc6749#section-4.2": `https://${domain}/oauth/sonny`,
           },
         },
