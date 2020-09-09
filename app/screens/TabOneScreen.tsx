@@ -1,32 +1,36 @@
-import React, { useContext } from "react";
-import { StyleSheet } from "react-native";
+import React, { useContext, useState, useEffect } from "react";
+import { StyleSheet, FlatList, ActivityIndicator } from "react-native";
+import { ListItem, Button } from "react-native-elements";
+import * as DocumentPicker from "expo-document-picker";
 
-import EditScreenInfo from "../components/EditScreenInfo";
-import { Text, View } from "../components/Themed";
+import { View } from "../components/Themed";
 
 import AccountContext from "../AccountContext";
 
-import RemoteStorage from "client/dist/RemoteStorage";
+import List from "../scenes/storage/List";
+import Loading from "../scenes/storage/Loading";
+import UploadButton from "../scenes/storage/UploadButton";
 
-export default function TabOneScreen() {
+import useRemoteStorage from "../lib/useRemoteStorage";
+
+export default function TabOneScreen({ route, navigation }) {
   const [account, setAccount] = useContext(AccountContext);
-  console.log(account);
+  const path = route.params?.path || "/";
 
-  const rs = new RemoteStorage(account.link.href, account.token);
+  const [node, refresh] = useRemoteStorage(path);
 
-  rs.get("/").then(([node]) => {
-    console.log(node);
-  });
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: path,
+    });
+  }, [path]);
+
+  if (!node) return <Loading />;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
-      />
-      <EditScreenInfo path="/screens/TabOneScreen.tsx" />
+      <List node={node} navigation={navigation} />
+      <UploadButton path={path} onUpload={refresh} />
     </View>
   );
 }
@@ -34,8 +38,8 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    // alignItems: "center",
+    // justifyContent: "center",
   },
   title: {
     fontSize: 20,

@@ -17,10 +17,11 @@ export default function BottomTabNavigator() {
   return (
     <BottomTab.Navigator
       initialRouteName="TabOne"
+      initialParams={{ path: "/" }}
       tabBarOptions={{ activeTintColor: Colors[colorScheme].tint }}
     >
       <BottomTab.Screen
-        name="TabOne"
+        name="Storage"
         component={TabOneNavigator}
         options={{
           tabBarIcon: ({ color }) => (
@@ -29,7 +30,7 @@ export default function BottomTabNavigator() {
         }}
       />
       <BottomTab.Screen
-        name="TabTwo"
+        name="Account"
         component={TabTwoNavigator}
         options={{
           tabBarIcon: ({ color }) => (
@@ -57,7 +58,12 @@ function TabOneNavigator() {
       <TabOneStack.Screen
         name="TabOneScreen"
         component={TabOneScreen}
-        options={{ headerTitle: "Tab One Title" }}
+        options={(route) => {
+          console.log(route.params);
+          return {
+            headerTitle: route.params?.path || "",
+          };
+        }}
       />
     </TabOneStack.Navigator>
   );

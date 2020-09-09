@@ -8,7 +8,7 @@ export interface DocumentDescription extends Record<string, string> {
 }
 
 export interface FolderDescription {
-  "@context": "foobar";
+  "@context": "http://remotestorage.io/spec/folder-description";
   items: { string: DocumentDescription };
 }
 
@@ -141,7 +141,16 @@ export default class RS implements AsyncIterable<[string, Node]> {
     const { status } = res;
 
     if (status === 200) {
-      return [createNode(res.headers), res];
+      const node = createNode(res.headers);
+
+      console.log(path.endsWith("/"));
+
+      if (path.endsWith("/")) {
+        const folder: FolderDescription = await res.json();
+        node.items = folder.items;
+      }
+
+      return [node, res];
     }
 
     if (status === 304) {

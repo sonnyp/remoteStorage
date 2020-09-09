@@ -171,8 +171,9 @@ if (form) {
 
     const location = form.querySelector("input[type=text]") as HTMLInputElement;
 
-    console.log(await rs.put(`${location.value}${blob.name}`, blob));
-    const node = await rs.head(`${location.value}${blob.name}`);
+    const filePath = `${location.value}${blob.name}`;
+    await rs.put(filePath, blob);
+    const node = await rs.head(filePath);
     console.log(node);
   });
 }

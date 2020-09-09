@@ -14,8 +14,11 @@ import AsyncStorage from "@react-native-community/async-storage";
 import { RootStackParamList } from "../types";
 
 import AccountContext from "../AccountContext";
-import { lookup } from "client/dist/WebFinger";
-import { buildAuthURL, getRemoteStorageLink } from "client/dist/RemoteStorage";
+import { lookup } from "@remotestorage/client/dist/WebFinger";
+import {
+  buildAuthURL,
+  getRemoteStorageLink,
+} from "@remotestorage/client/dist/RemoteStorage";
 
 async function connect({ lookupUrl, resource }) {
   const record = await lookup(`acct:${resource}`, lookupUrl);
