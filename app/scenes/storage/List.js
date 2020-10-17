@@ -23,9 +23,6 @@ export default function List({ node, path, onPress, onRefresh }) {
 
   return (
     <>
-      {path !== "/" && (
-        <Item item={{ name: "..", path: "/" }} onPress={onPress} />
-      )}
       <FlatList
         style={styles.container}
         refreshing={refreshing}

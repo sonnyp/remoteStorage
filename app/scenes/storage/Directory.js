@@ -5,6 +5,7 @@ import UploadButton from "./UploadButton";
 import remoteStorage from "../../lib/remoteStorage";
 import Toolbar from "../../components/Toolbar";
 import CreateDirectoryButton from "./CreateDirectoryButton";
+import ParentButton from "./ParentButton";
 
 export default function Directory({ node, path, setPath, refresh }) {
   return (
@@ -16,6 +17,7 @@ export default function Directory({ node, path, setPath, refresh }) {
         onPress={(item) => setPath(item.path)}
       />
       <Toolbar>
+        {path !== "/" && <ParentButton path={path} setPath={setPath} />}
         <UploadButton
           path={path}
           onUpload={(file) => {
