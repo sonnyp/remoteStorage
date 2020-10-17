@@ -1,5 +1,4 @@
-import React, { useState, useContext } from "react";
-import { StackScreenProps } from "@react-navigation/stack";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,14 +10,11 @@ import {
 import { Input, Button, Divider } from "react-native-elements";
 import AsyncStorage from "@react-native-community/async-storage";
 
-import { RootStackParamList } from "../types";
-
-import AccountContext from "../AccountContext";
-import { lookup } from "@remotestorage/client/dist/WebFinger";
+import { lookup } from "../../remoteStorage/WebFinger";
 import {
   buildAuthURL,
   getRemoteStorageLink,
-} from "@remotestorage/client/dist/RemoteStorage";
+} from "../../remoteStorage/RemoteStorage";
 
 async function connect({ lookupUrl, resource }) {
   const record = await lookup(`acct:${resource}`, lookupUrl);
@@ -43,7 +39,7 @@ async function connect({ lookupUrl, resource }) {
 async function onSubmit({
   resource,
   setLoading,
-  setAccount,
+  // setAccount,
   setErrorMessage,
   lookupUrl,
 }) {
@@ -57,15 +53,15 @@ async function onSubmit({
   try {
     const { link } = await connect({ lookupUrl, resource });
 
-    setAccount({
-      // connected: true,
-      link,
-    });
+    // setAccount({
+    //   // connected: true,
+    //   link,
+    // });
   } catch (err) {
     console.log(err);
-    setAccount({
-      connected: false,
-    });
+    // setAccount({
+    //   connected: false,
+    // });
   } finally {
     setLoading(false);
   }
@@ -74,15 +70,12 @@ async function onSubmit({
 const domain = "localhost";
 const dev = true;
 
-export default function ConnectScreen({
-  navigation,
-}: StackScreenProps<RootStackParamList, "Root">) {
+export default function ConnectScreen() {
   const [resource, setResource] = useState(dev ? `sonny@${domain}` : "");
   const [lookupUrl, setLookupUrl] = useState(
     dev ? `https://${domain}:4646/.well-known/webfinger` : "",
   );
   const [loading, setLoading] = useState(false);
-  const [account, setAccount] = useContext(AccountContext);
   const [errorMessage, setErrorMessage] = useState("");
 
   function onChangeResource(text) {
@@ -117,7 +110,7 @@ export default function ConnectScreen({
             resource,
             setLoading,
             setErrorMessage,
-            setAccount,
+            // setAccount,
             lookupUrl,
           })
         }
