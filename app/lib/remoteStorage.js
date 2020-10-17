@@ -1,4 +1,4 @@
-import RemoteStorage from "@remotestorage/client/dist/RemoteStorage";
+import RemoteStorage from "../remoteStorage/RemoteStorage";
 
 const remoteStorage = new RemoteStorage();
 
