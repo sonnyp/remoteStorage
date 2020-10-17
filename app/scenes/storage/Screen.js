@@ -26,7 +26,8 @@ export default function StorageScreen() {
   return (
     <View style={styles.container}>
       {(() => {
-        if (!node) return <Loading />;
+        if (!node) return null;
+        // if (!node) return <Loading />;
 
         if (path.endsWith("/"))
           return (
