@@ -4,12 +4,12 @@ import { Image, StyleSheet, View, TextInput } from "react-native";
 import remoteStorage from "../../lib/remoteStorage";
 import Toolbar from "../../components/Toolbar";
 import DeleteButton from "./DeleteButton";
+import ParentButton from "./ParentButton";
+import { getParentPath } from "../../remoteStorage/RemoteStorage";
 
 export default function Document({ node, path, setPath, refresh }) {
   const [uri, seturi] = useState("");
   const [text, setText] = useState("");
-
-  console.log(node, path);
 
   useEffect(() => {
     remoteStorage.get(path).then(async ([, fo]) => {
@@ -54,14 +54,18 @@ export default function Document({ node, path, setPath, refresh }) {
       </View>
 
       <Toolbar>
-        <DeleteButton path={path} onDelete={onDelete} />
+        <ParentButton path={path} setPath={setPath} />
+        <DeleteButton
+          path={path}
+          onDelete={() => onDelete({ path, setPath })}
+        />
       </Toolbar>
     </>
   );
 }
 
-async function onDelete() {
-  console.log("ok");
+async function onDelete({ setPath, path }) {
+  setPath(getParentPath(path));
 }
 
 const styles = StyleSheet.create({

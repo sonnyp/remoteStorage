@@ -257,3 +257,18 @@ export function buildAuthURL(
 
   return url;
 }
+
+export function isDocumentPath(path: string): boolean {
+  return !isDirectoryPath(path);
+}
+
+export function isDirectoryPath(path: string): boolean {
+  return path.endsWith("/");
+}
+
+export function getParentPath(path: string): string | null {
+  if (path === "/") return null;
+
+  const split = path.split("/");
+  return split.slice(0, isDirectoryPath(path) ? -2 : -1).join("/") + "/";
+}

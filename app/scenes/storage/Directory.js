@@ -6,6 +6,7 @@ import remoteStorage from "../../lib/remoteStorage";
 import Toolbar from "../../components/Toolbar";
 import CreateDirectoryButton from "./CreateDirectoryButton";
 import ParentButton from "./ParentButton";
+import DeleteButton from "./DeleteButton";
 
 export default function Directory({ node, path, setPath, refresh }) {
   return (
@@ -18,10 +19,14 @@ export default function Directory({ node, path, setPath, refresh }) {
       />
       <Toolbar>
         {path !== "/" && <ParentButton path={path} setPath={setPath} />}
+        {/* <DeleteButton
+          path={path}
+          onDelete={() => onDelete({ path, setPath })}
+        /> */}
         <UploadButton
           path={path}
           onUpload={(file) => {
-            return onUpload({ file, path });
+            onUpload({ file, path, refresh });
           }}
         />
         <CreateDirectoryButton
@@ -35,9 +40,14 @@ export default function Directory({ node, path, setPath, refresh }) {
   );
 }
 
-async function onUpload({ file, path }) {
+async function onUpload({ file, path, refresh }) {
   const filePath = `${path}${file.name}`;
-  return remoteStorage.upload(filePath, file);
+  await remoteStorage.upload(filePath, file);
+  refresh();
+}
+
+async function onDelete({ setPath, path }) {
+  setPath(getParentPath(path));
 }
 
 async function onCreateDirectory({ name, path }) {

@@ -3,7 +3,11 @@ import { StyleSheet } from "react-native";
 import { Button } from "react-native-elements";
 import * as DocumentPicker from "expo-document-picker";
 
+import { getParentPath } from "../../remoteStorage/RemoteStorage";
+
 export default function ParentButton({ path, setPath }) {
+  console.log(path);
+
   return (
     <Button
       icon={{
@@ -14,10 +18,7 @@ export default function ParentButton({ path, setPath }) {
       // title="Upload"
       // loading={loading}
       onPress={() => {
-        let p = path.split("/");
-        p.pop();
-        p.pop();
-        setPath(p.join("/") + "/");
+        setPath(getParentPath(path));
       }}
     />
   );
